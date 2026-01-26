@@ -314,13 +314,23 @@ export function calculateAgeInYears(dateOfBirth: string | Date): number {
   
   let age = today.getFullYear() - dob.getFullYear();
   const monthDiff = today.getMonth() - dob.getMonth();
+  const dayDiff = today.getDate() - dob.getDate();
   
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+  // Adjust if birthday hasn't occurred this year
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
     age--;
   }
   
-  // Calculate decimal for months
-  const months = (today.getMonth() - dob.getMonth() + 12) % 12;
+  // Calculate decimal for months (more accurate)
+  let months = today.getMonth() - dob.getMonth();
+  if (months < 0) {
+    months += 12;
+  }
+  if (dayDiff < 0) {
+    months--;
+    if (months < 0) months = 11;
+  }
+  
   const decimalAge = age + (months / 12);
   
   return Math.round(decimalAge * 100) / 100; // Round to 2 decimal places
@@ -345,7 +355,7 @@ export function getPatientReferenceRange(
   // Find matching range (gender-specific first, then "all")
   let matchingRange = config.ranges.find(r => 
     patientAge >= r.ageMin && 
-    patientAge < r.ageMax && 
+    patientAge <= r.ageMax && 
     r.gender === gender
   );
   
@@ -353,7 +363,7 @@ export function getPatientReferenceRange(
   if (!matchingRange) {
     matchingRange = config.ranges.find(r => 
       patientAge >= r.ageMin && 
-      patientAge < r.ageMax && 
+      patientAge <= r.ageMax && 
       r.gender === "all"
     );
   }
