@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { labTests } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import type { OrderLine, Service } from "@shared/schema";
 
 /**
@@ -16,16 +16,51 @@ export async function recalculateLabTestPrices(
   orderLines: OrderLine[],
   laboratoryServices: Service[]
 ): Promise<OrderLine[]> {
-  // Cache lowercased service names for performance
+  // Cache lowercased service names for exact match performance
   const serviceMap = new Map(
     laboratoryServices.map(s => [s.name.toLowerCase(), s])
   );
+  
+  // Build fuzzy match cache to avoid repeated linear searches
+  const fuzzyMatchCache = new Map<string, Service | null>();
 
-  return Promise.all(orderLines.map(async (line) => {
+  // Collect all lab test related IDs first
+  const labTestIds = orderLines
+    .filter(line => line.relatedType === 'lab_test' && line.relatedId)
+    .map(line => line.relatedId!);
+
+  // Fetch all lab tests in a single query to avoid N+1 problem
+  const labTestsMap = new Map<string, any>();
+  if (labTestIds.length > 0) {
+    const labTestsData = await db.select()
+      .from(labTests)
+      .where(inArray(labTests.testId, labTestIds));
+    
+    labTestsData.forEach(lt => {
+      labTestsMap.set(lt.testId, lt);
+    });
+  }
+
+  // Helper function for fuzzy matching with caching
+  const findServiceFuzzy = (testNameLower: string): Service | null => {
+    if (fuzzyMatchCache.has(testNameLower)) {
+      return fuzzyMatchCache.get(testNameLower)!;
+    }
+    
+    const service = laboratoryServices.find(s => 
+      s.name.toLowerCase().includes(testNameLower) ||
+      testNameLower.includes(s.name.toLowerCase())
+    ) ?? null;
+    
+    fuzzyMatchCache.set(testNameLower, service);
+    return service;
+  };
+
+  // Process order lines with cached data
+  return orderLines.map((line) => {
     if (line.relatedType === 'lab_test' && line.relatedId) {
       try {
-        // Get the lab test record to access the tests array
-        const [labTest] = await db.select().from(labTests).where(eq(labTests.testId, line.relatedId));
+        const labTest = labTestsMap.get(line.relatedId);
         
         if (labTest && labTest.tests) {
           let testNames: string[];
@@ -47,14 +82,11 @@ export async function recalculateLabTestPrices(
             
             // If no exact match, try fuzzy matching
             if (!service) {
-              service = laboratoryServices.find(s => 
-                s.name.toLowerCase().includes(testNameLower) ||
-                testNameLower.includes(s.name.toLowerCase())
-              );
+              service = findServiceFuzzy(testNameLower) ?? undefined;
             }
             
             if (service) {
-              calculatedTotal += service.price || 0;
+              calculatedTotal += service.price ?? 0;
             }
           });
           
@@ -73,5 +105,5 @@ export async function recalculateLabTestPrices(
       }
     }
     return line;
-  }));
+  });
 }
