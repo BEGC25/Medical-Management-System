@@ -1927,10 +1927,18 @@ router.get("/api/payments/:paymentId", async (req, res) => {
     const servicesMap = new Map();
     services.forEach(s => servicesMap.set(s.id, s));
 
-    // Get pharmacy orders for pharmacy item names
-    const pharmacyOrders = await storage.getPharmacyOrders();
+    // Get pharmacy orders for pharmacy item names (only if there are pharmacy items)
     const pharmacyOrdersMap = new Map();
-    pharmacyOrders.forEach(order => pharmacyOrdersMap.set(order.orderId, order));
+    const pharmacyOrderIds = items
+      .filter(item => item.relatedType === 'pharmacy_order' && item.relatedId)
+      .map(item => item.relatedId as string);
+    
+    if (pharmacyOrderIds.length > 0) {
+      const allPharmacyOrders = await storage.getPharmacyOrders();
+      allPharmacyOrders
+        .filter(order => pharmacyOrderIds.includes(order.orderId))
+        .forEach(order => pharmacyOrdersMap.set(order.orderId, order));
+    }
 
     const itemsWithDetails = items.map(item => {
       let serviceName = 'Unknown Service';
