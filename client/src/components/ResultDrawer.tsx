@@ -49,7 +49,7 @@ function hasAbnormalValues(
 const TEST_TYPE_ICONS: Record<string, string> = {
   "Blood Film for Malaria": "🩸",
   "Hemoglobin": "🩸",
-  "ESR": "🧪",
+  "ESR": "🩸",  // Erythrocyte Sedimentation Rate - blood test
   "Fasting Blood Sugar": "🩸",
   "Widal Test": "🩸",
   "Liver Function Test": "⚗️",
@@ -62,10 +62,15 @@ const TEST_TYPE_ICONS: Record<string, string> = {
   "Thyroid": "💉",
 };
 
+// Cached lowercased keys for efficient lookup
+const TEST_TYPE_KEYS_LOWER = Object.keys(TEST_TYPE_ICONS).map(k => k.toLowerCase());
+
 function getTestTypeIcon(testName: string): string {
-  for (const [key, icon] of Object.entries(TEST_TYPE_ICONS)) {
-    if (testName.toLowerCase().includes(key.toLowerCase())) {
-      return icon;
+  const testNameLower = testName.toLowerCase();
+  for (let i = 0; i < TEST_TYPE_KEYS_LOWER.length; i++) {
+    if (testNameLower.includes(TEST_TYPE_KEYS_LOWER[i])) {
+      const originalKey = Object.keys(TEST_TYPE_ICONS)[i];
+      return TEST_TYPE_ICONS[originalKey];
     }
   }
   return "🔬"; // Default lab icon
@@ -257,9 +262,13 @@ export default function ResultDrawer(props: {
                             : 'border-l-green-500 border-green-200 bg-gradient-to-r from-green-50 to-white'
                         } shadow-sm hover:shadow-md transition-shadow p-5`}
                       >
-                        {/* Status Badge */}
-                        <div className="absolute top-3 right-3">
-                          <span className={`px-2.5 py-1 text-white text-xs font-bold rounded-full flex items-center gap-1 ${
+                        {/* Header with Icon and Status Badge */}
+                        <div className="flex items-start justify-between gap-3 mb-4">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="text-2xl flex-shrink-0">{getTestTypeIcon(panel)}</span>
+                            <h4 className="font-bold text-gray-900 text-lg">{panel}</h4>
+                          </div>
+                          <span className={`flex-shrink-0 px-2.5 py-1 text-white text-xs font-bold rounded-full flex items-center gap-1 ${
                             isAbnormalPanel ? 'bg-amber-500' : 'bg-green-500'
                           }`}>
                             {isAbnormalPanel ? (
@@ -272,12 +281,6 @@ export default function ResultDrawer(props: {
                               </>
                             )}
                           </span>
-                        </div>
-                        
-                        {/* Header with Icon */}
-                        <div className="flex items-center gap-2 mb-4 pr-24">
-                          <span className="text-2xl">{getTestTypeIcon(panel)}</span>
-                          <h4 className="font-bold text-gray-900 text-lg">{panel}</h4>
                         </div>
                         
                         {/* Results with Reference Ranges */}

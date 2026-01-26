@@ -3953,7 +3953,7 @@ export default function Treatment() {
                                                 <div className="flex flex-wrap gap-1.5 mt-2">
                                                   {parseJSON<string[]>(order.tests, []).map((test, i) => (
                                                     <Badge 
-                                                      key={i} 
+                                                      key={`${order.orderId}-${test}-${i}`}
                                                       variant="outline" 
                                                       className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"
                                                     >
