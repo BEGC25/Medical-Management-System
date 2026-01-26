@@ -702,12 +702,113 @@ function interpretCustomTest(testData: Record<string, string>): { critical: stri
 }
 
 /**
+ * Interpret Alkaline Phosphatase (ALP) results
+ */
+function interpretALP(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const alp = parseFloat(testData["ALP"]);
+  
+  if (isNaN(alp) || alp === 0) return { critical, warnings };
+  
+  if (alp > 500) {
+    critical.push(`Markedly elevated ALP (${alp} U/L) - Suggests biliary obstruction, Paget's disease, or metastatic bone disease; urgent imaging recommended`);
+  } else if (alp > 300) {
+    warnings.push(`Significantly elevated ALP (${alp} U/L) - Evaluate for cholestatic liver disease, bone disorders, or malignancy`);
+  } else if (alp > 147) {
+    warnings.push(`Mildly elevated ALP (${alp} U/L) - Consider hepatobiliary disease, bone growth/healing, or pregnancy`);
+  } else if (alp < 35) {
+    warnings.push(`Low ALP (${alp} U/L) - May indicate malnutrition, hypothyroidism, or zinc deficiency`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Testosterone results
+ */
+function interpretTestosterone(testData: Record<string, string>, patient?: { gender?: string; age?: string }): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  const total = parseFloat(testData["Total Testosterone"] || testData["Testosterone"] || "0");
+  const free = parseFloat(testData["Free Testosterone"] || "0");
+  
+  if (total === 0 && free === 0) return { critical, warnings };
+  
+  const isMale = patient?.gender?.toLowerCase().startsWith('m') ?? true; // Default to male if not specified
+  
+  if (isMale) {
+    // Male reference: 300-1000 ng/dL
+    if (total < 200) {
+      warnings.push(`Low testosterone (${total} ng/dL) - Hypogonadism likely; evaluate for primary vs secondary cause, consider endocrine referral`);
+    } else if (total < 300) {
+      warnings.push(`Borderline low testosterone (${total} ng/dL) - Monitor symptoms (fatigue, low libido, mood changes); repeat testing if symptomatic`);
+    } else if (total > 1000) {
+      warnings.push(`Elevated testosterone (${total} ng/dL) - Evaluate for exogenous testosterone use or androgen-secreting tumor`);
+    }
+  } else {
+    // Female reference: 15-70 ng/dL
+    if (total > 100) {
+      warnings.push(`Significantly elevated testosterone (${total} ng/dL) - Evaluate for PCOS, androgen-secreting tumor, or congenital adrenal hyperplasia`);
+    } else if (total > 70) {
+      warnings.push(`Mildly elevated testosterone (${total} ng/dL) - Consider PCOS; correlate with clinical features (hirsutism, acne, irregular menses)`);
+    } else if (total < 10) {
+      warnings.push(`Low testosterone (${total} ng/dL) - May contribute to low libido, fatigue; consider if symptomatic`);
+    }
+  }
+  
+  return { critical, warnings };
+}
+
+/**
+ * Interpret Stool Analysis results (alias for Stool Examination)
+ */
+function interpretStoolAnalysis(testData: Record<string, string>): { critical: string[]; warnings: string[] } {
+  const critical: string[] = [];
+  const warnings: string[] = [];
+  
+  // Parasites
+  const parasites = testData["Ova/Parasites"] || testData["Parasites"];
+  if (parasites && parasites !== "None seen" && parasites !== "Negative") {
+    warnings.push(`Intestinal parasite detected: ${parasites} - Antiparasitic treatment required (e.g., Metronidazole for E. histolytica)`);
+  }
+  
+  // Occult blood
+  if (testData["Occult Blood"] === "Positive") {
+    warnings.push(`Fecal occult blood POSITIVE - Evaluate for GI bleeding; consider upper/lower endoscopy if age >45 or symptoms present`);
+  }
+  
+  // Bloody stool
+  if (testData["Appearance"] === "Bloody" || testData["Color"] === "Red" || testData["Color"] === "Black") {
+    critical.push(`Abnormal stool appearance (${testData["Appearance"] || testData["Color"]}) - Urgent GI evaluation for active bleeding`);
+  }
+  
+  // Mucoid stool
+  if (testData["Appearance"] === "Mucoid") {
+    warnings.push(`Mucoid stool - Consider inflammatory bowel disease, infection, or irritable bowel syndrome`);
+  }
+  
+  // Consistency
+  if (testData["Consistency"] === "Watery") {
+    warnings.push(`Watery stool - Assess for acute gastroenteritis, ensure adequate hydration`);
+  }
+  
+  return { critical, warnings };
+}
+
+/**
  * Main function to interpret all lab test results
  * 
  * @param results Object containing all lab test results, keyed by test name
+ * @param patient Optional patient information for gender/age-specific interpretations
  * @returns LabInterpretation object with critical findings and warnings
  */
-export function interpretLabResults(results: Record<string, Record<string, string>>): LabInterpretation {
+export function interpretLabResults(
+  results: Record<string, Record<string, string>>,
+  patient?: { gender?: string; age?: string }
+): LabInterpretation {
   const allCritical: string[] = [];
   const allWarnings: string[] = [];
   const unknownPanels: string[] = [];
@@ -786,6 +887,14 @@ export function interpretLabResults(results: Record<string, Record<string, strin
       interpretation = interpretUrineMicroscopy(testData);
     } else if (testName === "Stool Examination") {
       interpretation = interpretStoolExamination(testData);
+    } else if (testName === "Stool Analysis") {
+      interpretation = interpretStoolAnalysis(testData);
+    } else if (testName === "Hemoglobin (Hb)") {
+      interpretation = interpretHemoglobin(testData);
+    } else if (testName === "Alkaline Phosphatase (ALP)") {
+      interpretation = interpretALP(testData);
+    } else if (testName === "Testosterone") {
+      interpretation = interpretTestosterone(testData, patient);
     } else if (testName === "Custom Test") {
       interpretation = interpretCustomTest(testData);
     } else {
