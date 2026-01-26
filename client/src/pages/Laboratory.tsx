@@ -1799,8 +1799,15 @@ return (
                                 {Object.entries(testData).map(([fieldName, value]) => {
                                   const fields = findResultFields(testName);
                                   const config = fields?.[fieldName];
-                                  const colorClass = getValueColorClass(value, config?.range, config?.normal);
-                                  const arrow = getArrowIndicator(value, config?.range);
+                                  
+                                  // Get age-appropriate reference range
+                                  const patientRefRange = reportPatient 
+                                    ? getReferenceRange(testName, fieldName, reportPatient)
+                                    : null;
+                                  const displayRange = patientRefRange || config?.range;
+                                  
+                                  const colorClass = getValueColorClass(value, displayRange, config?.normal);
+                                  const arrow = getArrowIndicator(value, displayRange);
                                   
                                   return (
                                     <div 
@@ -1812,12 +1819,12 @@ return (
                                         <span className={`font-bold text-lg ${colorClass}`}>
                                           {value} {config?.unit || ""}{arrow}
                                         </span>
-                                        {config?.range && (
+                                        {displayRange && (
                                           <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full whitespace-nowrap">
-                                            Ref: {config.range} {config.unit || ""}
+                                            Ref: {displayRange}
                                           </span>
                                         )}
-                                        {config?.normal && !config?.range && (
+                                        {config?.normal && !displayRange && (
                                           <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full whitespace-nowrap">
                                             Normal: {config.normal}
                                           </span>
