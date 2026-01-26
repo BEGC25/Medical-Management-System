@@ -1361,15 +1361,15 @@ export default function ServiceManagement() {
 
                 {/* Bulk Entry Table */}
                 <div className="border-2 border-gray-200/50 dark:border-gray-700/50 rounded-xl overflow-hidden shadow-lg">
-                  <div className="bg-gradient-to-r from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 px-4 py-3 border-b-2 border-gray-200/50 dark:border-gray-700/50">
-                    <div className="grid grid-cols-12 gap-2 font-bold text-sm text-gray-700 dark:text-gray-300">
-                      <div className="col-span-1">#</div>
-                      <div className="col-span-6 sm:text-left">Service Name</div>
-                      <div className="col-span-4 sm:text-center">Price (SSP)</div>
-                      <div className="col-span-1"></div>
-                    </div>
-                  </div>
                   <div className="max-h-96 overflow-y-auto bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
+                    <div className="bg-gradient-to-r from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 px-4 py-3 border-b-2 border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-10">
+                      <div className="grid grid-cols-12 gap-2 font-bold text-sm text-gray-700 dark:text-gray-300">
+                        <div className="col-span-1">#</div>
+                        <div className="col-span-6 sm:text-left">Service Name</div>
+                        <div className="col-span-4 sm:text-center">Price (SSP)</div>
+                        <div className="col-span-1"></div>
+                      </div>
+                    </div>
                     {bulkEntries.map((entry, index) => (
                       <div key={index} className="px-4 py-4 border-b last:border-b-0 border-gray-200/50 dark:border-gray-700/50 hover:bg-blue-50/50 dark:hover:bg-gray-800/50 transition-all duration-300">
                         <div className="grid grid-cols-12 gap-2 items-center">
@@ -1401,9 +1401,8 @@ export default function ServiceManagement() {
                                     side="bottom"
                                     avoidCollisions={true}
                                     collisionPadding={10}
-                                    style={{ maxHeight: '350px', overflowY: 'auto' }}
                                   >
-                                    <Command className="w-full">
+                                    <Command className="w-full" shouldFilter={false}>
                                       <CommandInput 
                                         placeholder="Search services..." 
                                         value={entry.search}
