@@ -193,9 +193,13 @@ function getValueColorClass(value: string, range?: string, normalValue?: string)
   return "text-green-600 dark:text-green-400"; // Normal
 }
 
-function getTestSeverity(testName: string, testData: Record<string, string>): "critical" | "abnormal" | "normal" {
+function getTestSeverity(
+  testName: string, 
+  testData: Record<string, string>,
+  patient?: { gender?: string }
+): "critical" | "abnormal" | "normal" {
   // Use centralized abnormality detection
-  const result = isTestAbnormal(testName, testData);
+  const result = isTestAbnormal(testName, testData, patient);
   
   if (result.isCritical) return "critical";
   if (result.isAbnormal) return "abnormal";
@@ -1715,7 +1719,7 @@ return (
                   let normalCount = 0;
                   
                   entries.forEach(([testName, testData]) => {
-                    const severity = getTestSeverity(testName, testData);
+                    const severity = getTestSeverity(testName, testData, reportPatient || undefined);
                     if (severity === "critical") criticalCount++;
                     else if (severity === "abnormal") abnormalCount++;
                     else normalCount++;
@@ -1749,7 +1753,7 @@ return (
                       {/* Premium Test Cards */}
                       <div className="space-y-4">
                         {entries.map(([testName, testData]) => {
-                          const severity = getTestSeverity(testName, testData);
+                          const severity = getTestSeverity(testName, testData, reportPatient || undefined);
                           
                           // Card styling based on severity
                           const borderColor = severity === "critical" ? "border-l-red-500 border-red-200 dark:border-red-800" :

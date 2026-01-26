@@ -297,7 +297,7 @@ export default function ResultDrawer(props: {
                     let normalCount = 0;
                     
                     Object.entries(results).forEach(([testName, testResults]) => {
-                      const abnormalityResult = isTestAbnormal(testName, testResults);
+                      const abnormalityResult = isTestAbnormal(testName, testResults, patient);
                       if (abnormalityResult.isCritical) {
                         criticalCount++;
                         // Critical tests are NOT counted as abnormal
@@ -336,7 +336,7 @@ export default function ResultDrawer(props: {
                   
                   {/* Premium Color-Coded Result Cards - Using Centralized Detection */}
                   {Object.entries(results).map(([testName, testResults]) => {
-                    const abnormalityResult = isTestAbnormal(testName, testResults);
+                    const abnormalityResult = isTestAbnormal(testName, testResults, patient);
                     const isAbnormalPanel = abnormalityResult.isAbnormal;
                     const isCriticalPanel = abnormalityResult.isCritical;
                     
@@ -379,9 +379,9 @@ export default function ResultDrawer(props: {
                         {/* Results with Reference Ranges - Using Centralized Detection */}
                         <div className="space-y-2">
                           {Object.entries(testResults).map(([fieldName, value]) => {
-                            const abnormal = isFieldAbnormal(testName, fieldName, value);
+                            const abnormal = isFieldAbnormal(testName, fieldName, value, patient);
                             const unit = getUnit(testName, fieldName);
-                            const refRange = getReferenceRange(testName, fieldName);
+                            const refRange = getReferenceRange(testName, fieldName, patient);
                             
                             return (
                               <div key={fieldName} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100">
