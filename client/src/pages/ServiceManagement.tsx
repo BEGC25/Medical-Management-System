@@ -1372,14 +1372,16 @@ export default function ServiceManagement() {
                     </div>
                     {bulkEntries.map((entry, index) => (
                       <div key={index} className="px-4 py-4 border-b last:border-b-0 border-gray-200/50 dark:border-gray-700/50 hover:bg-blue-50/50 dark:hover:bg-gray-800/50 transition-all duration-300">
-                        <div className="grid grid-cols-12 gap-2 items-center">
-                          <div className="col-span-1 text-sm font-bold text-gray-500 bg-gray-100 dark:bg-gray-800 w-8 h-8 rounded-full flex items-center justify-center">
-                            {index + 1}
+                        <div className="grid grid-cols-12 gap-2 items-start">
+                          <div className="col-span-1 flex items-center h-10">
+                            <span className="text-sm font-bold text-gray-500 bg-gray-100 dark:bg-gray-800 w-8 h-8 rounded-full flex items-center justify-center">
+                              {index + 1}
+                            </span>
                           </div>
                           <div className="col-span-6">
                             {/* Service Name with Predefined Dropdown */}
                             {Object.keys(PREDEFINED_SERVICES[selectedCategory as keyof typeof PREDEFINED_SERVICES] || {}).length > 0 && !entry.useCustomName ? (
-                              <div className="space-y-2">
+                              <div className="flex flex-col">
                                 <Popover 
                                   open={entry.popoverOpen} 
                                   onOpenChange={(open) => updateBulkEntry(index, 'popoverOpen', open)}
@@ -1416,7 +1418,7 @@ export default function ServiceManagement() {
                                               <CommandItem
                                                 key={serviceName}
                                                 value={serviceName}
-                                                onSelect={() => handleBulkPredefinedServiceSelect(index, serviceName)}
+                                                onSelect={(currentValue) => handleBulkPredefinedServiceSelect(index, currentValue)}
                                               >
                                                 <Check
                                                   className={`mr-2 h-4 w-4 ${
@@ -1440,13 +1442,13 @@ export default function ServiceManagement() {
                                     updateBulkEntry(index, 'useCustomName', true);
                                     updateBulkEntry(index, 'name', "");
                                   }}
-                                  className="text-xs p-0 h-auto"
+                                  className="text-xs p-0 h-auto mt-1"
                                 >
                                   + Use custom service name
                                 </Button>
                               </div>
                             ) : (
-                              <div className="space-y-2">
+                              <div className="flex flex-col">
                                 <Input
                                   value={entry.name}
                                   onChange={(e) => updateBulkEntry(index, 'name', e.target.value)}
@@ -1462,7 +1464,7 @@ export default function ServiceManagement() {
                                       updateBulkEntry(index, 'useCustomName', false);
                                       updateBulkEntry(index, 'name', "");
                                     }}
-                                    className="text-xs p-0 h-auto"
+                                    className="text-xs p-0 h-auto mt-1"
                                   >
                                     ← Choose from predefined services
                                   </Button>
@@ -1470,7 +1472,7 @@ export default function ServiceManagement() {
                               </div>
                             )}
                           </div>
-                          <div className="col-span-4">
+                          <div className="col-span-4 flex items-start">
                             <Input
                               type="number"
                               value={entry.price}
@@ -1478,10 +1480,10 @@ export default function ServiceManagement() {
                               placeholder="0"
                               min="0"
                               step="0.01"
-                              className="h-10 border-2 focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
+                              className="h-10 w-full border-2 focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
                             />
                           </div>
-                          <div className="col-span-1">
+                          <div className="col-span-1 flex items-start">
                             <Button
                               type="button"
                               variant="ghost"
