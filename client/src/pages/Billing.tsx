@@ -22,6 +22,8 @@ interface EncounterWithPatient extends Encounter {
   orderLines?: OrderLine[];
   totalAmount?: number;
   serviceCount?: number;
+  totalPaid?: number;
+  outstandingBalance?: number;
 }
 
 // Visit Card Component with Total Display
@@ -38,9 +40,10 @@ function EncounterCard({
 }) {
   const [total, setTotal] = useState<number | null>(null);
   const [serviceCount, setServiceCount] = useState<number>(0);
+  const [totalPaid, setTotalPaid] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch encounter totals
+  // Fetch encounter totals and payments
   useEffect(() => {
     const fetchTotal = async () => {
       setIsLoading(true);
@@ -51,6 +54,13 @@ function EncounterCard({
           const calculatedTotal = calculateOrderLinesTotal(details.orderLines || []);
           setTotal(calculatedTotal);
           setServiceCount(details.orderLines?.length || 0);
+        }
+        
+        // Fetch payment totals
+        const paymentsResponse = await fetch(`/api/encounters/${encounter.encounterId}/payments`);
+        if (paymentsResponse.ok) {
+          const paymentsData = await paymentsResponse.json();
+          setTotalPaid(paymentsData.totalPaid || 0);
         }
       } catch (error) {
         console.error('Failed to fetch encounter total:', error);
@@ -154,8 +164,23 @@ function EncounterCard({
                   </div>
                   {total !== null && (
                     <div className="flex items-center gap-1 text-sm">
-                      <Receipt className="h-4 w-4 text-green-600" />
-                      <span className="font-semibold text-green-700">{formatCurrency(total)}</span>
+                      <Receipt className="h-4 w-4 text-orange-600" />
+                      <span className="text-gray-600">Charges:</span>
+                      <span className="font-semibold text-orange-700">{formatCurrency(total)}</span>
+                    </div>
+                  )}
+                  {totalPaid !== null && (
+                    <div className="flex items-center gap-1 text-sm">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-gray-600">Paid:</span>
+                      <span className="font-semibold text-green-700">{formatCurrency(totalPaid)}</span>
+                    </div>
+                  )}
+                  {total !== null && totalPaid !== null && total !== totalPaid && (
+                    <div className="flex items-center gap-1 text-sm">
+                      <AlertCircle className="h-4 w-4 text-amber-600" />
+                      <span className="text-gray-600">Balance:</span>
+                      <span className="font-semibold text-amber-700">{formatCurrency(total - totalPaid)}</span>
                     </div>
                   )}
                 </>
@@ -403,11 +428,25 @@ export default function Billing() {
       // Calculate total using shared utility
       const totalAmount = calculateOrderLinesTotal(details.orderLines || []);
       
+      // Fetch payment totals
+      let totalPaid = 0;
+      try {
+        const paymentsResponse = await fetch(`/api/encounters/${encounter.encounterId}/payments`);
+        if (paymentsResponse.ok) {
+          const paymentsData = await paymentsResponse.json();
+          totalPaid = paymentsData.totalPaid || 0;
+        }
+      } catch (error) {
+        console.error('Failed to fetch payments:', error);
+      }
+      
       setSelectedEncounter({
         ...encounter,
         orderLines: details.orderLines,
         totalAmount,
-        serviceCount: details.orderLines?.length || 0
+        serviceCount: details.orderLines?.length || 0,
+        totalPaid,
+        outstandingBalance: totalAmount - totalPaid
       });
     } catch (error) {
       toast({
@@ -630,10 +669,56 @@ export default function Billing() {
                       </div>
                     ))}
                     
-                    {/* Grand Total */}
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-lg mt-4 flex justify-between items-center">
-                      <span className="text-lg font-semibold">Grand Total:</span>
-                      <span className="text-2xl font-bold">{formatCurrency(selectedEncounter.totalAmount || 0)}</span>
+                    {/* Financial Summary */}
+                    <div className="mt-4 space-y-2">
+                      {/* Charges Total */}
+                      <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 rounded-lg flex justify-between items-center">
+                        <span className="text-lg font-semibold">Total Charges:</span>
+                        <span className="text-2xl font-bold">{formatCurrency(selectedEncounter.totalAmount || 0)}</span>
+                      </div>
+                      
+                      {/* Amount Paid */}
+                      {selectedEncounter.totalPaid !== undefined && (
+                        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg flex justify-between items-center">
+                          <span className="text-lg font-semibold">Amount Paid:</span>
+                          <span className="text-2xl font-bold">{formatCurrency(selectedEncounter.totalPaid || 0)}</span>
+                        </div>
+                      )}
+                      
+                      {/* Outstanding Balance */}
+                      {selectedEncounter.outstandingBalance !== undefined && selectedEncounter.outstandingBalance !== 0 && (
+                        <div className={`bg-gradient-to-r ${
+                          selectedEncounter.outstandingBalance > 0 
+                            ? 'from-amber-500 to-amber-600' 
+                            : 'from-blue-500 to-blue-600'
+                        } text-white p-4 rounded-lg flex justify-between items-center`}>
+                          <span className="text-lg font-semibold">
+                            {selectedEncounter.outstandingBalance > 0 ? 'Outstanding Balance:' : 'Overpayment:'}
+                          </span>
+                          <span className="text-2xl font-bold">
+                            {formatCurrency(Math.abs(selectedEncounter.outstandingBalance))}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Discrepancy Warning */}
+                      {selectedEncounter.totalPaid !== undefined && 
+                       selectedEncounter.totalAmount !== undefined && 
+                       selectedEncounter.totalPaid !== selectedEncounter.totalAmount && (
+                        <div className="bg-amber-50 border-l-4 border-amber-400 p-3 rounded">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                            <div className="text-sm">
+                              <p className="font-medium text-amber-900">Payment Discrepancy Detected</p>
+                              <p className="text-amber-700 mt-1">
+                                {selectedEncounter.totalPaid > selectedEncounter.totalAmount 
+                                  ? 'The amount paid exceeds the total charges. This may be due to data from before the billing system was updated.'
+                                  : 'The patient has an outstanding balance. Please ensure payment is collected.'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
