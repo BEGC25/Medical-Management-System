@@ -366,7 +366,7 @@
   #lab-clinical-print:not(:empty), #lab-clinical-print:not(:empty) * { visibility: visible; }
   #xray-report-print:not(:empty), #xray-report-print:not(:empty) * { visibility: visible; }
   #ultrasound-report-print:not(:empty), #ultrasound-report-print:not(:empty) * { visibility: visible; }
-  #payment-receipt-print, #payment-receipt-print * { visibility: visible; }
+  #payment-receipt-print:not(:empty), #payment-receipt-print:not(:empty) * { visibility: visible; }
   
   /* Special handling for printable invoice - needs display override */
   #printable-invoice {

@@ -1290,13 +1290,10 @@ export default function Treatment() {
       }
       
       // Calculate total price by summing all selected test prices
-      let totalLabPrice = 0;
-      selectedLabTests.forEach(testName => {
+      const totalLabPrice = selectedLabTests.reduce((total, testName) => {
         const service = testServiceMap.get(testName);
-        if (service) {
-          totalLabPrice += service.price;
-        }
-      });
+        return total + (service?.price || 0);
+      }, 0);
       
       // For simplicity, use the first test's service for the order
       // In a more complex system, you might create separate order lines for each test
