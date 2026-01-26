@@ -300,7 +300,7 @@ export default function ResultDrawer(props: {
                       const abnormalityResult = isTestAbnormal(testName, testResults);
                       if (abnormalityResult.isCritical) {
                         criticalCount++;
-                        abnormalCount++;
+                        // Critical tests are NOT counted as abnormal
                       } else if (abnormalityResult.isAbnormal) {
                         abnormalCount++;
                       } else {

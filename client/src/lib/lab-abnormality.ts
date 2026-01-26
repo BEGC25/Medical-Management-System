@@ -113,9 +113,9 @@ export function isFieldAbnormal(testName: string, fieldName: string, value: stri
   
   const strValue = String(value).trim();
   
-  // Check abnormal values list
+  // Check abnormal values list (exact match to avoid false positives)
   if (fieldConfig.abnormalValues) {
-    if (fieldConfig.abnormalValues.some(av => strValue.toLowerCase().includes(av.toLowerCase()))) {
+    if (fieldConfig.abnormalValues.some(av => strValue.toLowerCase() === av.toLowerCase())) {
       return true;
     }
   }
@@ -205,11 +205,14 @@ function isCriticalValue(testName: string, fieldName: string, value: string | nu
 
 /**
  * Normalize test names to handle aliases
+ * Maps various test name formats to their canonical form in LAB_REFERENCE_RANGES
  */
 function normalizeTestName(testName: string): string {
   const aliases: Record<string, string> = {
     "Hemoglobin (Hb)": "Hemoglobin (HB)",
     "Stool Analysis": "Stool Examination",
+    "Random Blood Sugar (RBS)": "Random Blood Sugar (RBS)",
+    "Fasting Blood Sugar (FBS)": "Fasting Blood Sugar (FBS)",
   };
   return aliases[testName] || testName;
 }
@@ -245,6 +248,7 @@ export function getUnit(testName: string, fieldName: string): string {
 
 /**
  * Count abnormal and normal tests in a results set
+ * Note: Critical tests are counted separately and NOT included in the abnormal count
  */
 export function countAbnormalNormal(results: Record<string, Record<string, string>>): { abnormal: number; normal: number; critical: number } {
   let abnormal = 0;
@@ -255,7 +259,7 @@ export function countAbnormalNormal(results: Record<string, Record<string, strin
     const result = isTestAbnormal(testName, testResults);
     if (result.isCritical) {
       critical++;
-      abnormal++;
+      // Critical tests are NOT counted as abnormal
     } else if (result.isAbnormal) {
       abnormal++;
     } else {
