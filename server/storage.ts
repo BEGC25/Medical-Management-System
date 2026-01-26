@@ -9,166 +9,167 @@ import { getClinicDayKey } from "@shared/clinic-date";
 import { generateTransactionId } from "./utils/transactionId";
 import { generateAndValidateServiceCode } from "@shared/service-code-utils";
 import { recalculateLabTestPrices } from "./utils/labTestPricing";
+import { Mutex } from 'async-mutex';
 
 const { users, patients, treatments, labTests, xrayExams, ultrasoundExams, pharmacyOrders, services, payments, paymentItems, encounters, orderLines, invoices, invoiceLines, drugs, drugBatches, inventoryLedger } = schema;
 
 // Tables are automatically created by Drizzle
 console.log("✓ Database connection established");
 
-// Counters for sequential IDs
-let patientCounter = 0;
-let treatmentCounter = 0;
-let labCounter = 0;
-let xrayCounter = 0;
-let ultrasoundCounter = 0;
-let prescriptionCounter = 0;
-let paymentCounter = 0;
-let encounterCounter = 0;
-let invoiceCounter = 0;
-let drugCodeCounter = 0;
-let batchCounter = 0;
+// Mutex locks for thread-safe ID generation
+const patientIdMutex = new Mutex();
+const treatmentIdMutex = new Mutex();
+const labIdMutex = new Mutex();
+const xrayIdMutex = new Mutex();
+const ultrasoundIdMutex = new Mutex();
+const pharmacyIdMutex = new Mutex();
+const paymentIdMutex = new Mutex();
+const encounterIdMutex = new Mutex();
+const invoiceIdMutex = new Mutex();
+const drugCodeMutex = new Mutex();
+const batchIdMutex = new Mutex();
 
 const XRAY_RELATED_TYPES = ["xray", "xray_exam"] as const;
 const LAB_RELATED_TYPES = ["lab", "lab_test"] as const;
 const ULTRASOUND_RELATED_TYPES = ["ultrasound", "ultrasound_exam"] as const;
 
 async function generatePatientId(): Promise<string> {
-  try {
-    if (patientCounter === 0) {
-      console.log('[generatePatientId] Initializing patient counter from database');
-      // Extract the highest patient number from existing IDs (including deleted ones)
-      const allPatients = await db.select({ patientId: patients.patientId }).from(patients);
-      console.log(`[generatePatientId] Found ${allPatients.length} existing patients (including deleted)`);
-      let maxNum = 0;
-      for (const patient of allPatients) {
-        const match = patient.patientId.match(/BGC(\d+)/);
-        if (match) {
-          const num = parseInt(match[1], 10);
-          if (num > maxNum) maxNum = num;
-        }
-      }
-      patientCounter = maxNum;
-      console.log(`[generatePatientId] Counter initialized to ${patientCounter}`);
+  return patientIdMutex.runExclusive(async () => {
+    try {
+      console.log('[generatePatientId] Acquiring mutex lock for patient ID generation');
+      // Query MAX patient ID from database
+      const result = await db.select({ 
+        maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(patient_id, 4) AS INTEGER)), 0)` 
+      }).from(patients);
+      const nextId = (result[0]?.maxNum || 0) + 1;
+      const newId = `BGC${nextId}`;
+      console.log(`[generatePatientId] Generated new patient ID: ${newId}`);
+      return newId;
+    } catch (error) {
+      console.error('[generatePatientId] FAILED to generate patient ID:', error);
+      console.error('[generatePatientId] Error details:', error instanceof Error ? error.stack : error);
+      throw new Error(`Failed to generate patient ID: ${error instanceof Error ? error.message : String(error)}`);
     }
-    patientCounter++;
-    const newId = `BGC${patientCounter}`;
-    console.log(`[generatePatientId] Generated new patient ID: ${newId}`);
-    return newId;
-  } catch (error) {
-    console.error('[generatePatientId] FAILED to generate patient ID:', error);
-    console.error('[generatePatientId] Error details:', error instanceof Error ? error.stack : error);
-    throw new Error(`Failed to generate patient ID: ${error instanceof Error ? error.message : String(error)}`);
-  }
+  });
 }
 
 async function generateTreatmentId(): Promise<string> {
-  if (treatmentCounter === 0) {
-    const allTreatments = await db.select().from(treatments);
-    treatmentCounter = allTreatments.length;
-  }
-  treatmentCounter++;
-  return `BGC-RX${treatmentCounter}`;
+  return treatmentIdMutex.runExclusive(async () => {
+    // Query MAX treatment ID from database
+    const result = await db.select({ 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(treatment_id, 8) AS INTEGER)), 0)` 
+    }).from(treatments);
+    const nextId = (result[0]?.maxNum || 0) + 1;
+    return `BGC-RX${nextId}`;
+  });
 }
 
 async function generateLabId(): Promise<string> {
-  if (labCounter === 0) {
-    const allLabs = await db.select().from(labTests);
-    labCounter = allLabs.length;
-  }
-  labCounter++;
-  return `BGC-LAB${labCounter}`;
+  return labIdMutex.runExclusive(async () => {
+    // Query MAX lab test ID from database
+    const result = await db.select({ 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(test_id, 9) AS INTEGER)), 0)` 
+    }).from(labTests);
+    const nextId = (result[0]?.maxNum || 0) + 1;
+    return `BGC-LAB${nextId}`;
+  });
 }
 
 async function generateXrayId(): Promise<string> {
-  if (xrayCounter === 0) {
-    const allXrays = await db.select().from(xrayExams);
-    xrayCounter = allXrays.length;
-  }
-  xrayCounter++;
-  return `BGC-XR${xrayCounter}`;
+  return xrayIdMutex.runExclusive(async () => {
+    // Query MAX X-ray exam ID from database
+    const result = await db.select({ 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(exam_id, 8) AS INTEGER)), 0)` 
+    }).from(xrayExams);
+    const nextId = (result[0]?.maxNum || 0) + 1;
+    return `BGC-XR${nextId}`;
+  });
 }
 
 async function generateUltrasoundId(): Promise<string> {
-  if (ultrasoundCounter === 0) {
-    const allUltrasounds = await db.select().from(ultrasoundExams);
-    ultrasoundCounter = allUltrasounds.length;
-  }
-  ultrasoundCounter++;
-  return `BGC-US${ultrasoundCounter}`;
+  return ultrasoundIdMutex.runExclusive(async () => {
+    // Query MAX ultrasound exam ID from database
+    const result = await db.select({ 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(exam_id, 8) AS INTEGER)), 0)` 
+    }).from(ultrasoundExams);
+    const nextId = (result[0]?.maxNum || 0) + 1;
+    return `BGC-US${nextId}`;
+  });
 }
 
 async function generatePharmacyId(): Promise<string> {
-  if (prescriptionCounter === 0) {
-    const allOrders = await db.select().from(pharmacyOrders);
-    prescriptionCounter = allOrders.length;
-  }
-  prescriptionCounter++;
-  return `BGC-PHARM${prescriptionCounter}`;
+  return pharmacyIdMutex.runExclusive(async () => {
+    // Query MAX pharmacy order ID from database
+    const result = await db.select({ 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(order_id, 11) AS INTEGER)), 0)` 
+    }).from(pharmacyOrders);
+    const nextId = (result[0]?.maxNum || 0) + 1;
+    return `BGC-PHARM${nextId}`;
+  });
 }
 
 async function generatePaymentId(): Promise<string> {
-  if (paymentCounter === 0) {
-    const allPayments = await db.select().from(payments);
-    paymentCounter = allPayments.length;
-  }
-  paymentCounter++;
-  return `BGC-PAY${paymentCounter}`;
+  return paymentIdMutex.runExclusive(async () => {
+    // Query MAX payment ID from database
+    const result = await db.select({ 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(payment_id, 9) AS INTEGER)), 0)` 
+    }).from(payments);
+    const nextId = (result[0]?.maxNum || 0) + 1;
+    return `BGC-PAY${nextId}`;
+  });
 }
 
 async function generateEncounterId(): Promise<string> {
-  try {
-    if (encounterCounter === 0) {
-      console.log('[generateEncounterId] Initializing encounter counter from database');
-      // Extract the highest encounter number from existing IDs
-      const allEncounters = await db.select({ encounterId: encounters.encounterId }).from(encounters);
-      console.log(`[generateEncounterId] Found ${allEncounters.length} existing encounters`);
-      let maxNum = 0;
-      for (const enc of allEncounters) {
-        const match = enc.encounterId.match(/BGC-ENC(\d+)/);
-        if (match) {
-          const num = parseInt(match[1], 10);
-          if (num > maxNum) maxNum = num;
-        }
-      }
-      encounterCounter = maxNum;
-      console.log(`[generateEncounterId] Counter initialized to ${encounterCounter}`);
+  return encounterIdMutex.runExclusive(async () => {
+    try {
+      console.log('[generateEncounterId] Acquiring mutex lock for encounter ID generation');
+      // Query MAX encounter ID from database
+      const result = await db.select({ 
+        maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(encounter_id, 9) AS INTEGER)), 0)` 
+      }).from(encounters);
+      const nextId = (result[0]?.maxNum || 0) + 1;
+      const newId = `BGC-ENC${nextId}`;
+      console.log(`[generateEncounterId] Generated new encounter ID: ${newId}`);
+      return newId;
+    } catch (error) {
+      console.error('[generateEncounterId] FAILED to generate encounter ID:', error);
+      console.error('[generateEncounterId] Error details:', error instanceof Error ? error.stack : error);
+      throw new Error(`Failed to generate encounter ID: ${error instanceof Error ? error.message : String(error)}`);
     }
-    encounterCounter++;
-    const newId = `BGC-ENC${encounterCounter}`;
-    console.log(`[generateEncounterId] Generated new encounter ID: ${newId}`);
-    return newId;
-  } catch (error) {
-    console.error('[generateEncounterId] FAILED to generate encounter ID:', error);
-    console.error('[generateEncounterId] Error details:', error instanceof Error ? error.stack : error);
-    throw new Error(`Failed to generate encounter ID: ${error instanceof Error ? error.message : String(error)}`);
-  }
+  });
 }
 
 async function generateInvoiceId(): Promise<string> {
-  if (invoiceCounter === 0) {
-    const allInvoices = await db.select().from(invoices);
-    invoiceCounter = allInvoices.length;
-  }
-  invoiceCounter++;
-  return `BGC-INV${invoiceCounter}`;
+  return invoiceIdMutex.runExclusive(async () => {
+    // Query MAX invoice ID from database
+    const result = await db.select({ 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(invoice_id, 9) AS INTEGER)), 0)` 
+    }).from(invoices);
+    const nextId = (result[0]?.maxNum || 0) + 1;
+    return `BGC-INV${nextId}`;
+  });
 }
 
 async function generateDrugCode(): Promise<string> {
-  if (drugCodeCounter === 0) {
-    const allDrugs = await db.select().from(drugs);
-    drugCodeCounter = allDrugs.length;
-  }
-  drugCodeCounter++;
-  return `DRG${drugCodeCounter.toString().padStart(5, '0')}`;
+  return drugCodeMutex.runExclusive(async () => {
+    // Query MAX drug code from database
+    const result = await db.select({ 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(drug_code, 4) AS INTEGER)), 0)` 
+    }).from(drugs);
+    const nextId = (result[0]?.maxNum || 0) + 1;
+    return `DRG${nextId.toString().padStart(5, '0')}`;
+  });
 }
 
 async function generateBatchId(): Promise<string> {
-  if (batchCounter === 0) {
-    const allBatches = await db.select().from(drugBatches);
-    batchCounter = allBatches.length;
-  }
-  batchCounter++;
-  return `BATCH${batchCounter.toString().padStart(6, '0')}`;
+  return batchIdMutex.runExclusive(async () => {
+    // Query MAX batch ID from database
+    const result = await db.select({ 
+      maxNum: sql<number>`COALESCE(MAX(CAST(SUBSTR(batch_id, 6) AS INTEGER)), 0)` 
+    }).from(drugBatches);
+    const nextId = (result[0]?.maxNum || 0) + 1;
+    return `BATCH${nextId.toString().padStart(6, '0')}`;
+  });
 }
 
 async function generateLedgerId(): Promise<string> {
