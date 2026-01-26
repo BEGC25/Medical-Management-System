@@ -1,7 +1,7 @@
 import { db } from '../db';
 import { labTests } from "@shared/schema";
 import { eq, inArray } from "drizzle-orm";
-import type { OrderLine, Service } from "@shared/schema";
+import type { OrderLine, Service, LabTest } from "@shared/schema";
 
 /**
  * Recalculates lab test order line prices from the service catalog.
@@ -30,7 +30,7 @@ export async function recalculateLabTestPrices(
     .map(line => line.relatedId!);
 
   // Fetch all lab tests in a single query to avoid N+1 problem
-  const labTestsMap = new Map<string, any>();
+  const labTestsMap = new Map<string, LabTest>();
   if (labTestIds.length > 0) {
     const labTestsData = await db.select()
       .from(labTests)
@@ -82,7 +82,7 @@ export async function recalculateLabTestPrices(
             
             // If no exact match, try fuzzy matching
             if (!service) {
-              service = findServiceFuzzy(testNameLower) ?? undefined;
+              service = findServiceFuzzy(testNameLower);
             }
             
             if (service) {
