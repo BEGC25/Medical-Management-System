@@ -209,8 +209,8 @@ export function isFieldAbnormal(
   const numValue = parseFloat(strValue);
   if (!isNaN(numValue)) {
     // Gender-specific ranges take priority
-    const isMale = patient?.gender?.toLowerCase().startsWith('m');
-    const isFemale = patient?.gender?.toLowerCase().startsWith('f');
+    const isMale = patient?.gender?.toLowerCase()?.startsWith('m') ?? false;
+    const isFemale = patient?.gender?.toLowerCase()?.startsWith('f') ?? false;
     
     if (isMale && fieldConfig.maleMin !== undefined && fieldConfig.maleMax !== undefined) {
       return numValue < fieldConfig.maleMin || numValue > fieldConfig.maleMax;
@@ -325,8 +325,8 @@ export function getReferenceRange(
   const fieldConfig = testConfig[fieldName];
   if (!fieldConfig) return null;
   
-  const isMale = patient?.gender?.toLowerCase().startsWith('m');
-  const isFemale = patient?.gender?.toLowerCase().startsWith('f');
+  const isMale = patient?.gender?.toLowerCase()?.startsWith('m') ?? false;
+  const isFemale = patient?.gender?.toLowerCase()?.startsWith('f') ?? false;
   
   // Return gender-specific range if available and gender is known
   if (isMale && fieldConfig.maleMin !== undefined && fieldConfig.maleMax !== undefined) {
