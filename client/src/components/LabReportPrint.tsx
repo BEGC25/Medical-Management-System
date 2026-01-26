@@ -165,7 +165,7 @@ export function LabReportPrint({
 
   // kept for future use (not printed in this layout)
   const _interpretation = includeInterpretation
-    ? interpretLabResults(results)
+    ? interpretLabResults(results, patient ?? undefined)
     : { criticalFindings: [] as string[], warnings: [] as string[] };
 
   const reportedDate =
