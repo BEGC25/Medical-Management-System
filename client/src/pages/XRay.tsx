@@ -80,7 +80,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, toTitleCase } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard } from '@/components/diagnostics';
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, PatientInfoHeader } from '@/components/diagnostics';
 import { XRAY_EXAM_TYPES, XRAY_BODY_PARTS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1161,6 +1161,13 @@ export default function XRay() {
               </div>
             )}
           </div>
+
+          {/* Patient Information Header */}
+          {reportPatient && (
+            <div className="px-6 pt-2">
+              <PatientInfoHeader patient={reportPatient} modality="xray" />
+            </div>
+          )}
 
           {/* VIEW MODE - Unified diagnostic result UI */}
           {viewMode === "view" && selectedXrayExam && (

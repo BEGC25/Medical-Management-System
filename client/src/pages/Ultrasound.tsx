@@ -84,7 +84,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, CLINIC_TZ, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getUltrasoundDisplayName } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard } from '@/components/diagnostics';
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, PatientInfoHeader } from '@/components/diagnostics';
 import { ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1306,6 +1306,13 @@ export default function Ultrasound() {
               </div>
             )}
           </div>
+
+          {/* Patient Information Header */}
+          {reportPatient && (
+            <div className="px-6 pt-2">
+              <PatientInfoHeader patient={reportPatient} modality="ultrasound" />
+            </div>
+          )}
 
           {/* VIEW MODE - Unified diagnostic result UI */}
           {viewMode === "view" && selectedUltrasoundExam && (
