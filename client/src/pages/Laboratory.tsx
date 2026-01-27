@@ -1991,6 +1991,11 @@ return (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {Object.entries(fields).map(([fieldName, config]) => {
                             const v = detailedResults[orderedTest]?.[fieldName] || "";
+                            
+                            // Get dynamic reference range based on patient age/gender
+                            const patient = selectedLabTest?.patient;
+                            const dynamicRange = getReferenceRange(orderedTest, fieldName, patient);
+                            const displayRange = dynamicRange || config.normal;
 
                             if (config.type === "multiselect") {
                               const selected = v.split(", ").filter(Boolean);
@@ -1998,9 +2003,9 @@ return (
                                 <div key={fieldName} className="space-y-2">
                                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">
                                     {fieldName}
-                                    {config.normal && (
+                                    {displayRange && (
                                       <span className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">
-                                        Normal: {config.normal}
+                                        Normal: {displayRange}
                                       </span>
                                     )}
                                   </label>
@@ -2040,9 +2045,9 @@ return (
                                 <div key={fieldName} className="space-y-2">
                                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">
                                     {fieldName}
-                                    {config.normal && (
+                                    {displayRange && (
                                       <span className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">
-                                        Normal: {config.normal}
+                                        Normal: {displayRange}
                                       </span>
                                     )}
                                   </label>
@@ -2074,9 +2079,9 @@ return (
                               <div key={fieldName} className="space-y-2">
                                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">
                                   {fieldName}
-                                  {config.normal && (
+                                  {displayRange && (
                                     <span className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">
-                                      Normal: {config.normal}
+                                      Normal: {displayRange}
                                     </span>
                                   )}
                                 </label>
