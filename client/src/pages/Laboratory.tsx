@@ -76,7 +76,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
 import { timeAgo } from "@/lib/time-utils";
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard } from "@/components/diagnostics";
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, PatientInfoHeader } from "@/components/diagnostics";
 import { LAB_TEST_CATALOG, getLabCategoryLabel, type LabTestCategory } from "@/lib/diagnostic-catalog";
 import { interpretLabResults } from "@/lib/lab-interpretation";
 import { isTestAbnormal, isFieldAbnormal, getReferenceRange, getUnit, getTestCategoryLabel } from "@/lib/lab-abnormality";
@@ -1640,7 +1640,12 @@ return (
               Record laboratory test results and findings
             </DialogDescription>
           </DialogHeader>
-
+          {/* Patient Information Header */}
+          {reportPatient && (
+            <div className="px-6 pt-2">
+              <PatientInfoHeader patient={reportPatient} modality="lab" />
+            </div>
+          )}
 
           {/* VIEW MODE - Unified diagnostic result UI */}
           {selectedLabTest && viewMode === "view" && (
