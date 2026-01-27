@@ -83,7 +83,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, CLINIC_TZ, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getUltrasoundDisplayName } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, OrderContextStrip } from '@/components/diagnostics';
+import { ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, OrderContextStrip } from '@/components/diagnostics';
 import { ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1314,7 +1314,7 @@ export default function Ultrasound() {
                 examType={selectedUltrasoundExam.examType || undefined}
                 scanRegion={selectedUltrasoundExam.specificExam || undefined}
                 priority={"routine"}
-                paymentStatus={selectedUltrasoundExam.paymentStatus as any || "unpaid"}
+                paymentStatus={selectedUltrasoundExam.paymentStatus || "unpaid"}
                 requestedDate={selectedUltrasoundExam.requestedDate}
                 completedDate={selectedUltrasoundExam.reportDate}
               />
@@ -1398,7 +1398,7 @@ export default function Ultrasound() {
                 examType={selectedUltrasoundExam?.examType || undefined}
                 scanRegion={selectedUltrasoundExam?.specificExam || undefined}
                 priority={"routine"}
-                paymentStatus={selectedUltrasoundExam?.paymentStatus as any || "unpaid"}
+                paymentStatus={selectedUltrasoundExam?.paymentStatus || "unpaid"}
                 requestedDate={selectedUltrasoundExam?.requestedDate}
               />
               

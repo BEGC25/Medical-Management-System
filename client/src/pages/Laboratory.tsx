@@ -76,7 +76,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
 import { timeAgo } from "@/lib/time-utils";
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, OrderContextStrip } from "@/components/diagnostics";
+import { ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, OrderContextStrip } from "@/components/diagnostics";
 import { LAB_TEST_CATALOG, getLabCategoryLabel, type LabTestCategory } from "@/lib/diagnostic-catalog";
 import { interpretLabResults } from "@/lib/lab-interpretation";
 import { isTestAbnormal, isFieldAbnormal, getReferenceRange, getUnit, getTestCategoryLabel } from "@/lib/lab-abnormality";
@@ -1649,8 +1649,8 @@ return (
               <OrderContextStrip
                 modality="lab"
                 tests={parseJSON<string[]>(selectedLabTest.tests, [])}
-                priority={selectedLabTest.priority as any || "routine"}
-                paymentStatus={selectedLabTest.paymentStatus as any || "unpaid"}
+                priority={selectedLabTest.priority || "routine"}
+                paymentStatus={selectedLabTest.paymentStatus || "unpaid"}
                 requestedDate={selectedLabTest.requestedDate}
                 completedDate={selectedLabTest.completedDate}
               />
@@ -1867,8 +1867,8 @@ return (
               <OrderContextStrip
                 modality="lab"
                 tests={parseJSON<string[]>(selectedLabTest.tests, [])}
-                priority={selectedLabTest.priority as any || "routine"}
-                paymentStatus={selectedLabTest.paymentStatus as any || "unpaid"}
+                priority={selectedLabTest.priority || "routine"}
+                paymentStatus={selectedLabTest.paymentStatus || "unpaid"}
                 requestedDate={selectedLabTest.requestedDate}
               />
               

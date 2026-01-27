@@ -80,7 +80,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, toTitleCase } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, OrderContextStrip } from '@/components/diagnostics';
+import { ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, OrderContextStrip } from '@/components/diagnostics';
 import { XRAY_EXAM_TYPES, XRAY_BODY_PARTS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1164,7 +1164,7 @@ export default function XRay() {
                 bodyPart={selectedXrayExam.bodyPart || undefined}
                 views={selectedXrayExam.viewDescriptions || undefined}
                 priority={"routine"}
-                paymentStatus={selectedXrayExam.paymentStatus as any || "unpaid"}
+                paymentStatus={selectedXrayExam.paymentStatus || "unpaid"}
                 requestedDate={selectedXrayExam.requestedDate}
                 completedDate={selectedXrayExam.reportDate}
               />
@@ -1268,7 +1268,7 @@ export default function XRay() {
                 bodyPart={selectedXrayExam?.bodyPart || undefined}
                 views={selectedXrayExam?.viewDescriptions || undefined}
                 priority={"routine"}
-                paymentStatus={selectedXrayExam?.paymentStatus as any || "unpaid"}
+                paymentStatus={selectedXrayExam?.paymentStatus || "unpaid"}
                 requestedDate={selectedXrayExam?.requestedDate}
               />
               

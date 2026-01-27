@@ -80,16 +80,16 @@ export function OrderContextStrip({
   const paymentConf = paymentConfig[paymentStatus];
 
   // Build exam description based on modality
-  const getExamDescription = () => {
+  const getExamDescription = (): string[] | null => {
     if (modality === "lab" && tests && tests.length > 0) {
       return tests;
     }
     if (modality === "xray") {
-      const parts = [examType, bodyPart, views].filter(Boolean);
+      const parts = [examType, bodyPart, views].filter((x): x is string => Boolean(x));
       return parts.length > 0 ? parts : null;
     }
     if (modality === "ultrasound") {
-      const parts = [examType, scanRegion].filter(Boolean);
+      const parts = [examType, scanRegion].filter((x): x is string => Boolean(x));
       return parts.length > 0 ? parts : null;
     }
     return null;
