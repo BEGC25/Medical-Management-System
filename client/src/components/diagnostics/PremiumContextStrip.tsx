@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Calendar, Zap, CheckCircle2, AlertCircle } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 type Modality = "lab" | "xray" | "ultrasound";
@@ -38,6 +38,8 @@ const modalityConfig = {
     icon: "📡",
   }
 };
+
+const BADGE_BASE_CLASS = "bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 text-xs font-medium px-2.5 py-0.5";
 
 const priorityConfig = {
   routine: {
@@ -101,11 +103,11 @@ export function PremiumContextStrip({
           
           {modality === "lab" && tests && tests.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap flex-1">
-              {tests.map((test, idx) => (
+              {tests.map((test) => (
                 <Badge
-                  key={idx}
+                  key={test}
                   variant="outline"
-                  className="bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 text-xs font-medium px-2.5 py-0.5"
+                  className={BADGE_BASE_CLASS}
                 >
                   {test}
                 </Badge>
@@ -118,7 +120,7 @@ export function PremiumContextStrip({
               {examType && (
                 <Badge
                   variant="outline"
-                  className="bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 text-xs font-medium px-2.5 py-0.5"
+                  className={BADGE_BASE_CLASS}
                 >
                   {examType}
                 </Badge>
@@ -126,7 +128,7 @@ export function PremiumContextStrip({
               {bodyPart && (
                 <Badge
                   variant="outline"
-                  className="bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 text-xs font-medium px-2.5 py-0.5"
+                  className={BADGE_BASE_CLASS}
                 >
                   {bodyPart}
                 </Badge>
@@ -134,7 +136,7 @@ export function PremiumContextStrip({
               {views && (
                 <Badge
                   variant="outline"
-                  className="bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 text-xs font-medium px-2.5 py-0.5"
+                  className={BADGE_BASE_CLASS}
                 >
                   {views}
                 </Badge>
@@ -147,7 +149,7 @@ export function PremiumContextStrip({
               {examType && (
                 <Badge
                   variant="outline"
-                  className="bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 text-xs font-medium px-2.5 py-0.5"
+                  className={BADGE_BASE_CLASS}
                 >
                   {examType}
                 </Badge>
@@ -155,7 +157,7 @@ export function PremiumContextStrip({
               {scanRegion && (
                 <Badge
                   variant="outline"
-                  className="bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 text-xs font-medium px-2.5 py-0.5"
+                  className={BADGE_BASE_CLASS}
                 >
                   {scanRegion}
                 </Badge>
