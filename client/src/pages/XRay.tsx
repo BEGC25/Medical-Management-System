@@ -80,7 +80,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, toTitleCase } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumOrderCard, PremiumTestsOrdered, PremiumContextStrip } from '@/components/diagnostics';
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, OrderContextStrip } from '@/components/diagnostics';
 import { XRAY_EXAM_TYPES, XRAY_BODY_PARTS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1157,17 +1157,20 @@ export default function XRay() {
                 </Button>
               </div>
 
-              {/* Hero Card */}
-              <PremiumOrderCard
+              {/* Order Context Strip - shows exam, priority, payment, dates */}
+              <OrderContextStrip
                 modality="xray"
-                title={getXrayDisplayName(selectedXrayExam)}
-                subtitle={selectedXrayExam.bodyPart || undefined}
-                status="completed"
-                requestedAt={selectedXrayExam.requestedDate}
-                completedAt={selectedXrayExam.reportDate}
+                examType={selectedXrayExam.examType || undefined}
+                bodyPart={selectedXrayExam.bodyPart || undefined}
+                views={selectedXrayExam.viewDescriptions || undefined}
+                priority={"routine"}
+                paymentStatus={selectedXrayExam.paymentStatus as any || "unpaid"}
+                requestedDate={selectedXrayExam.requestedDate}
+                completedDate={selectedXrayExam.reportDate}
               />
 
               {/* Radiological Findings Section */}
+
               {selectedXrayExam.findings && (
                 <ResultSectionCard
                   title="Radiological Findings"
@@ -1259,12 +1262,12 @@ export default function XRay() {
             {viewMode === "edit" && (
             <>
               {/* Context Strip for EDIT mode */}
-              <PremiumContextStrip
+              <OrderContextStrip
                 modality="xray"
                 examType={selectedXrayExam?.examType || undefined}
                 bodyPart={selectedXrayExam?.bodyPart || undefined}
-                views={selectedXrayExam?.views || undefined}
-                priority={selectedXrayExam?.priority as any || "routine"}
+                views={selectedXrayExam?.viewDescriptions || undefined}
+                priority={"routine"}
                 paymentStatus={selectedXrayExam?.paymentStatus as any || "unpaid"}
                 requestedDate={selectedXrayExam?.requestedDate}
               />

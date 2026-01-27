@@ -83,7 +83,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, CLINIC_TZ, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getUltrasoundDisplayName } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumOrderCard, PremiumTestsOrdered, PremiumContextStrip } from '@/components/diagnostics';
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, OrderContextStrip } from '@/components/diagnostics';
 import { ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1308,17 +1308,19 @@ export default function Ultrasound() {
                 </Button>
               </div>
 
-              {/* Hero Card */}
-              <PremiumOrderCard
+              {/* Order Context Strip - shows exam, priority, payment, dates */}
+              <OrderContextStrip
                 modality="ultrasound"
-                title={getUltrasoundDisplayName(selectedUltrasoundExam)}
-                subtitle={selectedUltrasoundExam.specificExam || undefined}
-                status="completed"
-                requestedAt={selectedUltrasoundExam.requestedDate}
-                completedAt={selectedUltrasoundExam.reportDate}
+                examType={selectedUltrasoundExam.examType || undefined}
+                scanRegion={selectedUltrasoundExam.specificExam || undefined}
+                priority={"routine"}
+                paymentStatus={selectedUltrasoundExam.paymentStatus as any || "unpaid"}
+                requestedDate={selectedUltrasoundExam.requestedDate}
+                completedDate={selectedUltrasoundExam.reportDate}
               />
 
               {/* Sonographic Findings Section */}
+
               {selectedUltrasoundExam.findings && (
                 <ResultSectionCard
                   title="Sonographic Findings"
@@ -1391,11 +1393,11 @@ export default function Ultrasound() {
             {viewMode === "edit" && (
             <>
               {/* Context Strip for EDIT mode */}
-              <PremiumContextStrip
+              <OrderContextStrip
                 modality="ultrasound"
                 examType={selectedUltrasoundExam?.examType || undefined}
                 scanRegion={selectedUltrasoundExam?.specificExam || undefined}
-                priority={selectedUltrasoundExam?.priority as any || "routine"}
+                priority={"routine"}
                 paymentStatus={selectedUltrasoundExam?.paymentStatus as any || "unpaid"}
                 requestedDate={selectedUltrasoundExam?.requestedDate}
               />
