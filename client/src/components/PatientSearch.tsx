@@ -184,40 +184,41 @@ export default function PatientSearch({
   }, [patients, excludePatientTypes]);
 
   return (
-    <div className="space-y-4">
-      {isLoading && (
-        <div className="text-center py-6">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue" />
-        </div>
-      )}
-
-      {filteredPatients && filteredPatients.length > 0 && (
-        <>
-          {/* Column Headers */}
-          <div className="hidden md:grid grid-cols-[0.4fr_2fr_0.6fr_0.8fr_1fr_0.8fr_1.2fr_0.8fr] gap-3 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 
-                          border-b border-gray-200 dark:border-gray-700 
-                          text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-            <div>No.</div>
-            <div>Patient Name</div>
-            <div>Patient ID</div>
-            <div>Age/Sex</div>
-            <div>Contact</div>
-            <div>Status</div>
-            <div>Diagnostics</div>
-            <div className="text-right">Date of Service</div>
+    <TooltipProvider>
+      <div className="space-y-4">
+        {isLoading && (
+          <div className="text-center py-6">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue" />
           </div>
+        )}
 
-          {/* Patient Rows */}
-          <div className="space-y-1.5 p-2">
-            {filteredPatients.map((p: PatientWithStatus & { lastEncounterDate?: string; updatedAt?: string }, index: number) => {
-              // ALWAYS use patient's actual dateOfService from API when available
-              const displayDate = p.dateOfService || p.lastVisit || p.lastEncounterDate || 
-                ((effectiveMode === "date" || effectiveMode === "today") && selectedDate
-                  ? selectedDate
-                  : (p.updatedAt || p.createdAt));
-              
-              const isSelected = selectedPatientId === p.patientId;
-              const indicators = getPatientIndicators(p, resultsReadyMap);
+        {filteredPatients && filteredPatients.length > 0 && (
+          <>
+            {/* Column Headers */}
+            <div className="hidden md:grid grid-cols-[0.4fr_2fr_0.6fr_0.8fr_1fr_0.8fr_1.2fr_0.8fr] gap-3 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 
+                            border-b border-gray-200 dark:border-gray-700 
+                            text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+              <div>No.</div>
+              <div>Patient Name</div>
+              <div>Patient ID</div>
+              <div>Age/Sex</div>
+              <div>Contact</div>
+              <div>Status</div>
+              <div>Diagnostics</div>
+              <div className="text-right">Date of Service</div>
+            </div>
+
+            {/* Patient Rows */}
+            <div className="space-y-1.5 p-2">
+              {filteredPatients.map((p: PatientWithStatus & { lastEncounterDate?: string; updatedAt?: string }, index: number) => {
+                // ALWAYS use patient's actual dateOfService from API when available
+                const displayDate = p.dateOfService || p.lastVisit || p.lastEncounterDate || 
+                  ((effectiveMode === "date" || effectiveMode === "today") && selectedDate
+                    ? selectedDate
+                    : (p.updatedAt || p.createdAt));
+                
+                const isSelected = selectedPatientId === p.patientId;
+                const indicators = getPatientIndicators(p, resultsReadyMap);
 
               return (
                 <div
@@ -281,47 +282,45 @@ export default function PatientSearch({
                   
                   {/* Diagnostics */}
                   <div className="flex flex-wrap gap-1">
-                    <TooltipProvider>
-                      {indicators.waiting.length > 0 && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Badge 
-                              variant="outline"
-                              className="text-xs border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-700 dark:bg-orange-900/20 dark:text-orange-400 cursor-help"
-                            >
-                              Waiting ({getTotalDiagnosticPending(p)})
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="bg-gray-900 text-white">
-                            <div className="text-xs space-y-0.5">
-                              {indicators.waiting.map((dept, idx) => (
-                                <div key={idx}>{dept}</div>
-                              ))}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                      
-                      {indicators.ready.length > 0 && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Badge 
-                              variant="outline"
-                              className="text-xs border-purple-300 bg-purple-50 text-purple-700 dark:border-purple-700 dark:bg-purple-900/20 dark:text-purple-400 cursor-help"
-                            >
-                              Ready ({indicators.ready.length})
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="bg-gray-900 text-white">
-                            <div className="text-xs space-y-0.5">
-                              {indicators.ready.map((dept, idx) => (
-                                <div key={idx}>{dept}</div>
-                              ))}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </TooltipProvider>
+                    {indicators.waiting.length > 0 && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge 
+                            variant="outline"
+                            className="text-xs border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-700 dark:bg-orange-900/20 dark:text-orange-400 cursor-help"
+                          >
+                            Waiting ({getTotalDiagnosticPending(p)})
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="bg-gray-900 text-white">
+                          <div className="text-xs space-y-0.5">
+                            {indicators.waiting.map((dept, idx) => (
+                              <div key={idx}>{dept}</div>
+                            ))}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                    
+                    {indicators.ready.length > 0 && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge 
+                            variant="outline"
+                            className="text-xs border-purple-300 bg-purple-50 text-purple-700 dark:border-purple-700 dark:bg-purple-900/20 dark:text-purple-400 cursor-help"
+                          >
+                            Ready ({indicators.ready.length})
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="bg-gray-900 text-white">
+                          <div className="text-xs space-y-0.5">
+                            {indicators.ready.map((dept, idx) => (
+                              <div key={idx}>{dept}</div>
+                            ))}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                     
                     {indicators.waiting.length === 0 && indicators.ready.length === 0 && (
                       <span className="text-xs text-gray-400 dark:text-gray-500 italic">
@@ -359,6 +358,7 @@ export default function PatientSearch({
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

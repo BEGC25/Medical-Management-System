@@ -38,17 +38,13 @@ export function hasDiagnosticOrdersWaiting(patient: PatientWithStatus): boolean 
   const serviceStatus = patient.serviceStatus;
   if (!serviceStatus) return false;
   
-  // Use the new diagnosticPending field if available, otherwise fall back to individual counts
+  // Use the new diagnosticPending field if available
   if (serviceStatus.diagnosticPending !== undefined) {
     return serviceStatus.diagnosticPending > 0;
   }
   
-  // Fallback: check individual diagnostic service pending counts
-  const labPending = serviceStatus.labPending ?? 0;
-  const xrayPending = serviceStatus.xrayPending ?? 0;
-  const ultrasoundPending = serviceStatus.ultrasoundPending ?? 0;
-  
-  return (labPending + xrayPending + ultrasoundPending) > 0;
+  // Fallback: use getTotalDiagnosticPending for consistency
+  return getTotalDiagnosticPending(patient) > 0;
 }
 
 /**
@@ -103,6 +99,23 @@ export function getTotalDiagnosticPending(patient: PatientWithStatus): number {
  */
 export function pluralize(count: number, singular: string, plural?: string): string {
   return count === 1 ? singular : (plural || `${singular}s`);
+}
+
+/**
+ * Get department route path from department name
+ * 
+ * @param departmentName - Name of the department (e.g., "Lab", "X-ray", "Ultrasound")
+ * @returns Route path for the department
+ */
+export function getDepartmentPath(departmentName: string): string {
+  const normalizedName = departmentName.toLowerCase();
+  
+  if (normalizedName.includes('lab')) return '/laboratory';
+  if (normalizedName.includes('x-ray') || normalizedName.includes('xray')) return '/x-ray';
+  if (normalizedName.includes('ultrasound')) return '/ultrasound';
+  
+  // Default fallback (should not happen with current department names)
+  return '/';
 }
 
 /**

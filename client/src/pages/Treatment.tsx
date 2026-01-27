@@ -91,7 +91,7 @@ import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, 
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, getVisitStatusLabel, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
 import { extractLabKeyFinding } from '@/lib/medical-criteria';
-import { hasPendingOrders, hasDiagnosticOrdersWaiting, getDiagnosticPendingDepartments, getPatientIndicators, pluralize } from '@/lib/patient-utils';
+import { hasPendingOrders, hasDiagnosticOrdersWaiting, getDiagnosticPendingDepartments, getPatientIndicators, pluralize, getDepartmentPath } from '@/lib/patient-utils';
 import type { PatientWithStatus } from "@shared/schema";
 import { LAB_TEST_CATALOG, XRAY_EXAM_TYPES, XRAY_BODY_PARTS, XRAY_PRESETS, ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS, ULTRASOUND_PRESETS, type LabTestCategory, type XrayExamType, type UltrasoundExamType } from "@/lib/diagnostic-catalog";
 
@@ -5771,8 +5771,7 @@ export default function Treatment() {
                         <div className="flex flex-wrap gap-1.5 sm:flex-row flex-col sm:items-center">
                           {pendingDepts.map((dept, i) => {
                             const deptName = dept.split(' (')[0];
-                            const deptPath = deptName === 'Lab' ? '/laboratory' : 
-                                           deptName === 'X-ray' ? '/x-ray' : '/ultrasound';
+                            const deptPath = getDepartmentPath(deptName);
                             
                             return (
                               <Badge 
