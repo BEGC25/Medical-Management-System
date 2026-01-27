@@ -77,6 +77,35 @@ export function getDiagnosticPendingDepartments(patient: PatientWithStatus): str
 }
 
 /**
+ * Get the total count of pending diagnostic orders across all departments
+ * 
+ * @param patient - Patient object with serviceStatus
+ * @returns Total number of pending diagnostic orders
+ */
+export function getTotalDiagnosticPending(patient: PatientWithStatus): number {
+  const serviceStatus = patient.serviceStatus;
+  if (!serviceStatus) return 0;
+  
+  const labPending = serviceStatus.labPending ?? 0;
+  const xrayPending = serviceStatus.xrayPending ?? 0;
+  const ultrasoundPending = serviceStatus.ultrasoundPending ?? 0;
+  
+  return labPending + xrayPending + ultrasoundPending;
+}
+
+/**
+ * Pluralize a word based on count
+ * 
+ * @param count - Number to check for pluralization
+ * @param singular - Singular form of the word
+ * @param plural - Optional plural form (defaults to singular + 's')
+ * @returns Pluralized word
+ */
+export function pluralize(count: number, singular: string, plural?: string): string {
+  return count === 1 ? singular : (plural || `${singular}s`);
+}
+
+/**
  * Map of ready results by patient ID
  * 
  * This structure holds completed diagnostic results grouped by patient.
