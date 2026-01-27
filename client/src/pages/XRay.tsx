@@ -80,7 +80,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, toTitleCase } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumPatientBanner, PremiumOrderCard, PremiumTestsOrdered } from '@/components/diagnostics';
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumPatientBanner, PremiumOrderCard, PremiumTestsOrdered, PremiumContextStrip } from '@/components/diagnostics';
 import { XRAY_EXAM_TYPES, XRAY_BODY_PARTS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1137,43 +1137,25 @@ export default function XRay() {
             {/* VIEW MODE - Unified diagnostic result UI */}
             {viewMode === "view" && selectedXrayExam && (
               <div className="space-y-4 pb-6">
-              {/* Modal Title */}
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  X-Ray • {selectedXrayExam.examId}
-                </h2>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setViewMode("edit")}
-                    className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                  >
-                    Edit Results
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={printXrayReport}
-                  >
-                    <Printer className="w-4 h-4 mr-2" />
-                    Print
-                  </Button>
-                </div>
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2 mb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setViewMode("edit")}
+                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                >
+                  Edit Results
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={printXrayReport}
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print
+                </Button>
               </div>
-
-              {/* Patient + Status Row */}
-              <PremiumPatientBanner
-                patientName={fullName(reportPatient) || selectedXrayExam.patientId}
-                patientId={selectedXrayExam.patientId}
-                age={reportPatient?.age}
-                gender={reportPatient?.gender}
-                statuses={[
-                  { variant: selectedXrayExam.paymentStatus === "paid" ? "paid" : "unpaid" },
-                  { variant: "completed" },
-                  { variant: "routine" },
-                ]}
-              />
 
               {/* Hero Card */}
               <PremiumOrderCard
@@ -1275,6 +1257,18 @@ export default function XRay() {
 
             {/* EDIT MODE */}
             {viewMode === "edit" && (
+            <>
+              {/* Context Strip for EDIT mode */}
+              <PremiumContextStrip
+                modality="xray"
+                examType={selectedXrayExam?.examType || undefined}
+                bodyPart={selectedXrayExam?.bodyPart || undefined}
+                views={selectedXrayExam?.views || undefined}
+                priority={selectedXrayExam?.priority as any || "routine"}
+                paymentStatus={selectedXrayExam?.paymentStatus as any || "unpaid"}
+                requestedDate={selectedXrayExam?.requestedDate}
+              />
+              
             <Form {...resultsForm}>
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 pb-6">
               
@@ -2204,6 +2198,7 @@ export default function XRay() {
               </div>
             </form>
           </Form>
+          </>
           )}
           </div>
         </DialogContent>
