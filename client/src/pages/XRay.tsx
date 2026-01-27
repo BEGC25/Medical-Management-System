@@ -80,7 +80,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, toTitleCase } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader } from '@/components/diagnostics';
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumPatientBanner, PremiumOrderCard, PremiumTestsOrdered } from '@/components/diagnostics';
 import { XRAY_EXAM_TYPES, XRAY_BODY_PARTS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1163,9 +1163,11 @@ export default function XRay() {
               </div>
 
               {/* Patient + Status Row */}
-              <ResultPatientHeader
+              <PremiumPatientBanner
                 patientName={fullName(reportPatient) || selectedXrayExam.patientId}
                 patientId={selectedXrayExam.patientId}
+                age={reportPatient?.age}
+                gender={reportPatient?.gender}
                 statuses={[
                   { variant: selectedXrayExam.paymentStatus === "paid" ? "paid" : "unpaid" },
                   { variant: "completed" },
@@ -1174,13 +1176,13 @@ export default function XRay() {
               />
 
               {/* Hero Card */}
-              <ResultHeaderCard
+              <PremiumOrderCard
                 modality="xray"
                 title={getXrayDisplayName(selectedXrayExam)}
                 subtitle={selectedXrayExam.bodyPart || undefined}
+                status="completed"
                 requestedAt={selectedXrayExam.requestedDate}
                 completedAt={selectedXrayExam.reportDate}
-                status="completed"
               />
 
               {/* Radiological Findings Section */}

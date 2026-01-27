@@ -5,3 +5,6 @@ export { StatusChip } from "./StatusChip";
 export { ResultPatientHeader } from "./ResultPatientHeader";
 export { PatientInfoHeader } from "./PatientInfoHeader";
 export { UnifiedModalHeader } from "./UnifiedModalHeader";
+export { PremiumPatientBanner } from "./PremiumPatientBanner";
+export { PremiumOrderCard } from "./PremiumOrderCard";
+export { PremiumTestsOrdered } from "./PremiumTestsOrdered";

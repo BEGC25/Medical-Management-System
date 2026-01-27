@@ -83,7 +83,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, CLINIC_TZ, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getUltrasoundDisplayName } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader } from '@/components/diagnostics';
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumPatientBanner, PremiumOrderCard, PremiumTestsOrdered } from '@/components/diagnostics';
 import { ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1314,9 +1314,11 @@ export default function Ultrasound() {
               </div>
 
               {/* Patient + Status Row */}
-              <ResultPatientHeader
+              <PremiumPatientBanner
                 patientName={fullName(reportPatient) || selectedUltrasoundExam.patientId}
                 patientId={selectedUltrasoundExam.patientId}
+                age={reportPatient?.age}
+                gender={reportPatient?.gender}
                 statuses={[
                   { variant: selectedUltrasoundExam.paymentStatus === "paid" ? "paid" : "unpaid" },
                   { variant: "completed" },
@@ -1325,13 +1327,13 @@ export default function Ultrasound() {
               />
 
               {/* Hero Card */}
-              <ResultHeaderCard
+              <PremiumOrderCard
                 modality="ultrasound"
                 title={getUltrasoundDisplayName(selectedUltrasoundExam)}
                 subtitle={selectedUltrasoundExam.specificExam || undefined}
+                status="completed"
                 requestedAt={selectedUltrasoundExam.requestedDate}
                 completedAt={selectedUltrasoundExam.reportDate}
-                status="completed"
               />
 
               {/* Sonographic Findings Section */}

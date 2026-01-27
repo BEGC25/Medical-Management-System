@@ -76,7 +76,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
 import { timeAgo } from "@/lib/time-utils";
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader } from "@/components/diagnostics";
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumPatientBanner, PremiumOrderCard, PremiumTestsOrdered } from "@/components/diagnostics";
 import { LAB_TEST_CATALOG, getLabCategoryLabel, type LabTestCategory } from "@/lib/diagnostic-catalog";
 import { interpretLabResults } from "@/lib/lab-interpretation";
 import { isTestAbnormal, isFieldAbnormal, getReferenceRange, getUnit, getTestCategoryLabel } from "@/lib/lab-abnormality";
@@ -1671,9 +1671,11 @@ return (
               </div>
 
               {/* Patient + Status Row */}
-              <ResultPatientHeader
+              <PremiumPatientBanner
                 patientName={fullName(reportPatient) || selectedLabTest.patientId}
                 patientId={selectedLabTest.patientId}
+                age={reportPatient?.age}
+                gender={reportPatient?.gender}
                 statuses={[
                   { variant: selectedLabTest.paymentStatus === "paid" ? "paid" : "unpaid" },
                   { variant: "completed" },
@@ -1682,28 +1684,21 @@ return (
               />
 
               {/* Hero Card */}
-              <ResultHeaderCard
+              <PremiumOrderCard
                 modality="lab"
                 title={`${selectedLabTest.category.charAt(0).toUpperCase() + selectedLabTest.category.slice(1)} Tests`}
-                subtitle={`${parseJSON<string[]>(selectedLabTest.tests, []).length} test(s) ordered`}
+                subtitle={selectedLabTest.category}
+                testCount={parseJSON<string[]>(selectedLabTest.tests, []).length}
+                status="completed"
                 requestedAt={selectedLabTest.requestedDate}
                 completedAt={selectedLabTest.completedDate}
-                status="completed"
               />
 
               {/* Tests Ordered Section */}
-              <ResultSectionCard
-                title="Tests Ordered"
-                tone="accent-blue"
-              >
-                <div className="flex flex-wrap gap-2">
-                  {parseJSON<string[]>(selectedLabTest.tests, []).map((test, i) => (
-                    <Badge key={i} variant="outline" className="bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
-                      {test}
-                    </Badge>
-                  ))}
-                </div>
-              </ResultSectionCard>
+              <PremiumTestsOrdered
+                modality="lab"
+                tests={parseJSON<string[]>(selectedLabTest.tests, [])}
+              />
 
               {/* Laboratory Results Section */}
               <div>
