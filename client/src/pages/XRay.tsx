@@ -80,7 +80,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, toTitleCase } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, PatientInfoHeader } from '@/components/diagnostics';
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader } from '@/components/diagnostics';
 import { XRAY_EXAM_TYPES, XRAY_BODY_PARTS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1117,61 +1117,26 @@ export default function XRay() {
       {/* Results/Report Dialog */}
       <Dialog open={resultsModalOpen} onOpenChange={setResultsModalOpen}>
         <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border-0">
-          {/* Premium Header with Gradient Background */}
-          <div className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white p-6 -m-6 mb-6 rounded-t-xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-                  <FileText className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <DialogTitle className="text-2xl font-bold text-white">
-                    X-Ray Examination Report
-                  </DialogTitle>
-                  <DialogDescription className="text-blue-100 text-sm mt-1">
-                    Complete radiological findings and diagnosis
-                  </DialogDescription>
-                </div>
-              </div>
-              <button 
-                onClick={() => setResultsModalOpen(false)}
-                className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-all"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            {/* Exam Type & Body Part Banner */}
-            {selectedXrayExam && (
-              <div className="mt-4 flex flex-wrap items-center gap-3 text-blue-100">
-                <Badge className="bg-white/20 text-white border-0 px-3 py-1">
-                  {selectedXrayExam.examType.charAt(0).toUpperCase() + selectedXrayExam.examType.slice(1)}
-                </Badge>
-                {selectedXrayExam.bodyPart && (
-                  <Badge className="bg-white/20 text-white border-0 px-3 py-1">
-                    {selectedXrayExam.bodyPart}
-                  </Badge>
-                )}
-                <span className="text-sm">
-                  Requested: {selectedXrayExam.requestedDate ? new Date(selectedXrayExam.requestedDate).toLocaleDateString() : 'N/A'}
-                </span>
-                <span className="text-sm">
-                  Patient: {reportPatient ? fullName(reportPatient) : selectedXrayExam.patientId}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Patient Information Header */}
-          {reportPatient && (
-            <div className="px-6 pt-2">
-              <PatientInfoHeader patient={reportPatient} modality="xray" />
-            </div>
+          {reportPatient && selectedXrayExam && (
+            <UnifiedModalHeader
+              modality="xray"
+              title="X-Ray Examination"
+              subtitle="Complete radiological findings and diagnosis"
+              examInfo={`${selectedXrayExam.examType?.charAt(0).toUpperCase() + selectedXrayExam.examType?.slice(1) || ''}${selectedXrayExam.bodyPart ? ' • ' + selectedXrayExam.bodyPart : ''}`}
+              patient={{
+                name: fullName(reportPatient),
+                age: reportPatient.age,
+                gender: reportPatient.gender,
+                patientId: reportPatient.patientId
+              }}
+              onClose={() => setResultsModalOpen(false)}
+            />
           )}
 
-          {/* VIEW MODE - Unified diagnostic result UI */}
-          {viewMode === "view" && selectedXrayExam && (
-            <div className="space-y-4 px-6 pb-6">
+          <div className="px-6 max-h-[calc(95vh-180px)] overflow-y-auto">
+            {/* VIEW MODE - Unified diagnostic result UI */}
+            {viewMode === "view" && selectedXrayExam && (
+              <div className="space-y-4 pb-6">
               {/* Modal Title */}
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
@@ -1306,10 +1271,10 @@ export default function XRay() {
             </div>
           )}
 
-          {/* EDIT MODE */}
-          {viewMode === "edit" && (
-          <Form {...resultsForm}>
-            <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 overflow-y-auto max-h-[calc(95vh-250px)] px-6">
+            {/* EDIT MODE */}
+            {viewMode === "edit" && (
+            <Form {...resultsForm}>
+              <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 pb-6">
               
               {/* Tabs for Describe Views vs Upload Images */}
               <Tabs value={imageUploadMode} onValueChange={(v) => setImageUploadMode(v as 'describe' | 'upload')} className="w-full">
@@ -2238,6 +2203,7 @@ export default function XRay() {
             </form>
           </Form>
           )}
+          </div>
         </DialogContent>
       </Dialog>
 

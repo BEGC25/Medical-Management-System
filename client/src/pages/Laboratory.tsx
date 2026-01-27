@@ -76,7 +76,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
 import { timeAgo } from "@/lib/time-utils";
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, PatientInfoHeader } from "@/components/diagnostics";
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader } from "@/components/diagnostics";
 import { LAB_TEST_CATALOG, getLabCategoryLabel, type LabTestCategory } from "@/lib/diagnostic-catalog";
 import { interpretLabResults } from "@/lib/lab-interpretation";
 import { isTestAbnormal, isFieldAbnormal, getReferenceRange, getUnit, getTestCategoryLabel } from "@/lib/lab-abnormality";
@@ -1627,29 +1627,24 @@ return (
       </div>
 
       <Dialog open={resultsModalOpen} onOpenChange={setResultsModalOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Beaker className="w-5 h-5 text-blue-600" />
-              Enter Test Results — {selectedLabTest?.testId}
-              {selectedLabTest?.status === "completed" && (
-                <Badge className="ml-2 bg-blue-600 text-white">Editing Completed Results</Badge>
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              Record laboratory test results and findings
-            </DialogDescription>
-          </DialogHeader>
-          {/* Patient Information Header */}
-          {reportPatient && (
-            <div className="px-6 pt-2">
-              <PatientInfoHeader patient={reportPatient} modality="lab" />
-            </div>
-          )}
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden border-0">
+          <UnifiedModalHeader
+            modality="lab"
+            title="Laboratory Test Results"
+            subtitle="Record laboratory test results and findings"
+            testId={selectedLabTest?.testId}
+            patient={reportPatient ? {
+              name: fullName(reportPatient),
+              age: reportPatient.age,
+              gender: reportPatient.gender,
+              patientId: reportPatient.patientId
+            } : undefined}
+            onClose={() => setResultsModalOpen(false)}
+          />
 
           {/* VIEW MODE - Unified diagnostic result UI */}
           {selectedLabTest && viewMode === "view" && (
-            <div className="space-y-4 px-6 pb-6 max-h-[65vh] overflow-y-auto">
+            <div className="space-y-4 px-6 max-h-[calc(90vh-180px)] overflow-y-auto">
               {/* Modal Title */}
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
@@ -1896,7 +1891,8 @@ return (
             </div>
           )}
           {selectedLabTest && viewMode === "edit" && (
-            <div className="space-y-6">
+            <div className="px-6 max-h-[calc(90vh-180px)] overflow-y-auto">
+             <div className="space-y-6">
               {/* Photo uploader */}
               <div className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                 <h5 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center">
@@ -2213,6 +2209,7 @@ return (
                 </div>
               </form>
             </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>

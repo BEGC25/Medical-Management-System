@@ -28,7 +28,6 @@ import {
   Baby,
   Stethoscope,
   Bone,
-  Lungs,
   FileDown,
   RefreshCw,
   AlertTriangle,
@@ -84,7 +83,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, CLINIC_TZ, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getUltrasoundDisplayName } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, PatientInfoHeader } from '@/components/diagnostics';
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader } from '@/components/diagnostics';
 import { ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1265,58 +1264,30 @@ export default function Ultrasound() {
       {/* Results/Report Dialog */}
       <Dialog open={resultsModalOpen} onOpenChange={setResultsModalOpen}>
         <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border-0">
-          {/* Premium Header with Gradient Background */}
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-500 text-white p-6 -m-6 mb-6 rounded-t-xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl">
-                  <FileText className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <DialogTitle className="text-2xl font-bold text-white">
-                    Ultrasound Examination Report
-                  </DialogTitle>
-                  <DialogDescription className="text-indigo-100 text-sm mt-1">
-                    Complete ultrasound findings and diagnostic impression
-                  </DialogDescription>
-                </div>
-              </div>
-              <button 
-                onClick={() => setResultsModalOpen(false)}
-                className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-all"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            {/* Exam Type & Patient Banner */}
-            {selectedUltrasoundExam && (
-              <div className="mt-4 flex flex-wrap items-center gap-3 text-indigo-100">
-                <Badge className="bg-white/20 text-white border-0 px-3 py-1">
-                  {selectedUltrasoundExam.specificExam 
-                    ? `${selectedUltrasoundExam.examType} - ${selectedUltrasoundExam.specificExam}` 
-                    : selectedUltrasoundExam.examType}
-                </Badge>
-                <span className="text-sm">
-                  Requested: {selectedUltrasoundExam.requestedDate ? new Date(selectedUltrasoundExam.requestedDate).toLocaleDateString() : 'N/A'}
-                </span>
-                <span className="text-sm">
-                  Patient: {reportPatient ? fullName(reportPatient) : selectedUltrasoundExam.patientId}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Patient Information Header */}
-          {reportPatient && (
-            <div className="px-6 pt-2">
-              <PatientInfoHeader patient={reportPatient} modality="ultrasound" />
-            </div>
+          {/* Unified Modal Header */}
+          {reportPatient && selectedUltrasoundExam && (
+            <UnifiedModalHeader
+              modality="ultrasound"
+              title="Ultrasound Examination"
+              subtitle="Complete ultrasound findings and diagnostic impression"
+              examInfo={selectedUltrasoundExam.specificExam 
+                ? `${selectedUltrasoundExam.examType} - ${selectedUltrasoundExam.specificExam}` 
+                : selectedUltrasoundExam.examType}
+              patient={{
+                name: fullName(reportPatient),
+                age: reportPatient.age,
+                gender: reportPatient.gender,
+                patientId: reportPatient.patientId
+              }}
+              onClose={() => setResultsModalOpen(false)}
+            />
           )}
 
-          {/* VIEW MODE - Unified diagnostic result UI */}
-          {viewMode === "view" && selectedUltrasoundExam && (
-            <div className="space-y-4 px-6 pb-6">
+          {/* Scrollable Content Wrapper */}
+          <div className="px-6 max-h-[calc(95vh-180px)] overflow-y-auto">
+            {/* VIEW MODE - Unified diagnostic result UI */}
+            {viewMode === "view" && selectedUltrasoundExam && (
+              <div className="space-y-4 pb-6">
               {/* Modal Title */}
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
@@ -1432,10 +1403,10 @@ export default function Ultrasound() {
             </div>
           )}
 
-          {/* EDIT MODE */}
-          {viewMode === "edit" && (
-          <Form {...resultsForm}>
-            <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 overflow-y-auto max-h-[calc(95vh-250px)] px-6">
+            {/* EDIT MODE */}
+            {viewMode === "edit" && (
+            <Form {...resultsForm}>
+              <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6">
               {/* Premium Image Upload Section - Collapsible */}
               <Accordion type="single" collapsible defaultValue="" className="mb-4">
                 <AccordionItem value="images" className="border-2 border-indigo-100 rounded-xl overflow-hidden">
@@ -2408,6 +2379,7 @@ export default function Ultrasound() {
             </form>
           </Form>
           )}
+          </div>
         </DialogContent>
       </Dialog>
 
