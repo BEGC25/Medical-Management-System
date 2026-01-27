@@ -76,7 +76,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
 import { timeAgo } from "@/lib/time-utils";
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumPatientBanner, PremiumOrderCard, PremiumTestsOrdered } from "@/components/diagnostics";
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumOrderCard, PremiumTestsOrdered, PremiumContextStrip } from "@/components/diagnostics";
 import { LAB_TEST_CATALOG, getLabCategoryLabel, type LabTestCategory } from "@/lib/diagnostic-catalog";
 import { interpretLabResults } from "@/lib/lab-interpretation";
 import { isTestAbnormal, isFieldAbnormal, getReferenceRange, getUnit, getTestCategoryLabel } from "@/lib/lab-abnormality";
@@ -1645,43 +1645,25 @@ return (
           {/* VIEW MODE - Unified diagnostic result UI */}
           {selectedLabTest && viewMode === "view" && (
             <div className="space-y-4 px-6 max-h-[calc(90vh-180px)] overflow-y-auto">
-              {/* Modal Title */}
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  Lab • {selectedLabTest.testId}
-                </h2>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setViewMode("edit")}
-                    className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                  >
-                    Edit Results
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={printLabReport}
-                  >
-                    <Printer className="w-4 h-4 mr-2" />
-                    Print
-                  </Button>
-                </div>
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2 mb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setViewMode("edit")}
+                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                >
+                  Edit Results
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={printLabReport}
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print
+                </Button>
               </div>
-
-              {/* Patient + Status Row */}
-              <PremiumPatientBanner
-                patientName={fullName(reportPatient) || selectedLabTest.patientId}
-                patientId={selectedLabTest.patientId}
-                age={reportPatient?.age}
-                gender={reportPatient?.gender}
-                statuses={[
-                  { variant: selectedLabTest.paymentStatus === "paid" ? "paid" : "unpaid" },
-                  { variant: "completed" },
-                  { variant: selectedLabTest.priority as any },
-                ]}
-              />
 
               {/* Hero Card */}
               <PremiumOrderCard
@@ -1888,6 +1870,15 @@ return (
           {selectedLabTest && viewMode === "edit" && (
             <div className="px-6 max-h-[calc(90vh-180px)] overflow-y-auto">
              <div className="space-y-6">
+              {/* Context Strip for EDIT mode */}
+              <PremiumContextStrip
+                modality="lab"
+                tests={parseJSON<string[]>(selectedLabTest.tests, [])}
+                priority={selectedLabTest.priority as any}
+                paymentStatus={selectedLabTest.paymentStatus as any}
+                requestedDate={selectedLabTest.requestedDate}
+              />
+              
               {/* Photo uploader */}
               <div className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                 <h5 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center">

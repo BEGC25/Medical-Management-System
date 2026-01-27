@@ -8,3 +8,4 @@ export { UnifiedModalHeader } from "./UnifiedModalHeader";
 export { PremiumPatientBanner } from "./PremiumPatientBanner";
 export { PremiumOrderCard } from "./PremiumOrderCard";
 export { PremiumTestsOrdered } from "./PremiumTestsOrdered";
+export { PremiumContextStrip } from "./PremiumContextStrip";

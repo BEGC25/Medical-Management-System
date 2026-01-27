@@ -83,7 +83,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, CLINIC_TZ, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getUltrasoundDisplayName } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumPatientBanner, PremiumOrderCard, PremiumTestsOrdered } from '@/components/diagnostics';
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumOrderCard, PremiumTestsOrdered, PremiumContextStrip } from '@/components/diagnostics';
 import { ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1288,43 +1288,25 @@ export default function Ultrasound() {
             {/* VIEW MODE - Unified diagnostic result UI */}
             {viewMode === "view" && selectedUltrasoundExam && (
               <div className="space-y-4 pb-6">
-              {/* Modal Title */}
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  Ultrasound • {selectedUltrasoundExam.examId}
-                </h2>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setViewMode("edit")}
-                    className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
-                  >
-                    Edit Results
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={printUltrasoundReport}
-                  >
-                    <Printer className="w-4 h-4 mr-2" />
-                    Print
-                  </Button>
-                </div>
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2 mb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setViewMode("edit")}
+                  className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                >
+                  Edit Results
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={printUltrasoundReport}
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print
+                </Button>
               </div>
-
-              {/* Patient + Status Row */}
-              <PremiumPatientBanner
-                patientName={fullName(reportPatient) || selectedUltrasoundExam.patientId}
-                patientId={selectedUltrasoundExam.patientId}
-                age={reportPatient?.age}
-                gender={reportPatient?.gender}
-                statuses={[
-                  { variant: selectedUltrasoundExam.paymentStatus === "paid" ? "paid" : "unpaid" },
-                  { variant: "completed" },
-                  { variant: "routine" },
-                ]}
-              />
 
               {/* Hero Card */}
               <PremiumOrderCard
@@ -1407,6 +1389,17 @@ export default function Ultrasound() {
 
             {/* EDIT MODE */}
             {viewMode === "edit" && (
+            <>
+              {/* Context Strip for EDIT mode */}
+              <PremiumContextStrip
+                modality="ultrasound"
+                examType={selectedUltrasoundExam?.examType || undefined}
+                scanRegion={selectedUltrasoundExam?.specificExam || undefined}
+                priority={selectedUltrasoundExam?.priority as any || "routine"}
+                paymentStatus={selectedUltrasoundExam?.paymentStatus as any || "unpaid"}
+                requestedDate={selectedUltrasoundExam?.requestedDate}
+              />
+              
             <Form {...resultsForm}>
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6">
               {/* Premium Image Upload Section - Collapsible */}
@@ -2380,6 +2373,7 @@ export default function Ultrasound() {
             </div>
             </form>
           </Form>
+          </>
           )}
           </div>
         </DialogContent>
