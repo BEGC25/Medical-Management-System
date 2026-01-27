@@ -24,7 +24,6 @@ const modalityConfig = {
     ),
     gradient: "from-blue-600 to-indigo-500",
     bgGradient: "from-blue-50/80 via-indigo-50/60 to-blue-50/80 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-blue-950/40",
-    glowColor: "blue",
     textColor: "text-blue-900 dark:text-blue-100",
     borderColor: "border-blue-200 dark:border-blue-800"
   },
@@ -36,7 +35,6 @@ const modalityConfig = {
     ),
     gradient: "from-cyan-600 to-blue-600",
     bgGradient: "from-cyan-50/80 via-blue-50/60 to-cyan-50/80 dark:from-cyan-950/40 dark:via-blue-950/30 dark:to-cyan-950/40",
-    glowColor: "cyan",
     textColor: "text-cyan-900 dark:text-cyan-100",
     borderColor: "border-cyan-200 dark:border-cyan-800"
   },
@@ -48,7 +46,6 @@ const modalityConfig = {
     ),
     gradient: "from-violet-600 to-indigo-500",
     bgGradient: "from-violet-50/80 via-purple-50/60 to-violet-50/80 dark:from-violet-950/40 dark:via-purple-950/30 dark:to-violet-950/40",
-    glowColor: "violet",
     textColor: "text-violet-900 dark:text-violet-100",
     borderColor: "border-violet-200 dark:border-violet-800"
   }
@@ -87,11 +84,18 @@ export function PremiumOrderCard({
 }: PremiumOrderCardProps) {
   const config = modalityConfig[modality];
   const statusConf = statusConfig[status];
+  
+  // Get modality-specific glow color class
+  const glowClass = modality === "lab" 
+    ? "bg-blue-500/20" 
+    : modality === "xray" 
+    ? "bg-cyan-500/20" 
+    : "bg-violet-500/20";
 
   return (
     <div className={`relative overflow-hidden rounded-xl border-2 ${config.borderColor} bg-gradient-to-br ${config.bgGradient} p-6 shadow-lg`}>
       {/* Glow effect */}
-      <div className={`absolute -top-10 -right-10 w-32 h-32 bg-${config.glowColor}-500/20 rounded-full blur-3xl`}></div>
+      <div className={`absolute -top-10 -right-10 w-32 h-32 ${glowClass} rounded-full blur-3xl`}></div>
       
       <div className="relative z-10">
         <div className="flex items-start justify-between gap-4 mb-4">
