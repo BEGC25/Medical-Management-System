@@ -15,21 +15,18 @@ interface PatientInfoHeaderProps {
 
 const modalityConfig = {
   lab: {
-    gradient: "from-blue-500 to-indigo-500",
     bgGradient: "from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20",
     border: "border-blue-200 dark:border-blue-800",
     iconBg: "bg-blue-100 dark:bg-blue-900/30",
     iconColor: "text-blue-600 dark:text-blue-400",
   },
   xray: {
-    gradient: "from-blue-500 to-cyan-500",
     bgGradient: "from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20",
     border: "border-blue-200 dark:border-blue-800",
     iconBg: "bg-cyan-100 dark:bg-cyan-900/30",
     iconColor: "text-cyan-600 dark:text-cyan-400",
   },
   ultrasound: {
-    gradient: "from-indigo-500 to-purple-500",
     bgGradient: "from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20",
     border: "border-indigo-200 dark:border-indigo-800",
     iconBg: "bg-purple-100 dark:bg-purple-900/30",
