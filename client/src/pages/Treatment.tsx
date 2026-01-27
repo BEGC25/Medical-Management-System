@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import {
   Save,
   FileText,
@@ -91,7 +91,7 @@ import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, 
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, getVisitStatusLabel, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
 import { extractLabKeyFinding } from '@/lib/medical-criteria';
-import { hasPendingOrders, hasDiagnosticOrdersWaiting, getDiagnosticPendingDepartments, getPatientIndicators } from '@/lib/patient-utils';
+import { hasPendingOrders, hasDiagnosticOrdersWaiting, getDiagnosticPendingDepartments, getPatientIndicators, pluralize, getDepartmentPath } from '@/lib/patient-utils';
 import type { PatientWithStatus } from "@shared/schema";
 import { LAB_TEST_CATALOG, XRAY_EXAM_TYPES, XRAY_BODY_PARTS, XRAY_PRESETS, ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS, ULTRASOUND_PRESETS, type LabTestCategory, type XrayExamType, type UltrasoundExamType } from "@/lib/diagnostic-catalog";
 
@@ -471,6 +471,7 @@ export default function Treatment() {
   const visitId = rawVisitId && rawVisitId !== "new" ? rawVisitId : undefined;
   const searchParams = new URLSearchParams(window.location.search);
   const patientIdFromQuery = searchParams.get("patientId") || undefined;
+  const [, navigate] = useLocation();
 
   const { user } = useAuth();
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -5648,16 +5649,16 @@ export default function Treatment() {
                 <span className="text-sm sm:text-base">Orders Waiting (Lab / X-ray / Ultrasound)</span>
               </div>
               <Badge variant="secondary" className="ml-0 sm:ml-2 bg-amber-600 text-white self-start">
-                {patientsWithOrdersWaiting.length} patients
+                {patientsWithOrdersWaiting.length} {pluralize(patientsWithOrdersWaiting.length, 'patient')}
               </Badge>
             </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             {/* Info text */}
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-              <p className="text-sm text-amber-900 dark:text-amber-100">
-                <strong>Diagnostic orders waiting for processing:</strong> These patients have pending Lab, X-ray, or Ultrasound orders that need to be completed.
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+              <p className="text-xs text-amber-900 dark:text-amber-100">
+                <strong>Diagnostic orders waiting:</strong> Patients with pending Lab, X-ray, or Ultrasound orders.
               </p>
             </div>
 
@@ -5767,16 +5768,26 @@ export default function Treatment() {
                         </div>
                         
                         {/* Diagnostics */}
-                        <div className="flex flex-wrap gap-1">
-                          {pendingDepts.map((dept, i) => (
-                            <Badge 
-                              key={i}
-                              variant="secondary" 
-                              className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700"
-                            >
-                              {dept}
-                            </Badge>
-                          ))}
+                        <div className="flex flex-wrap gap-1.5 sm:flex-row flex-col sm:items-center">
+                          {pendingDepts.map((dept, i) => {
+                            const deptName = dept.split(' (')[0];
+                            const deptPath = getDepartmentPath(deptName);
+                            
+                            return (
+                              <Badge 
+                                key={i}
+                                variant="secondary" 
+                                className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 hover:bg-amber-200 dark:hover:bg-amber-800/40 cursor-pointer transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(deptPath);
+                                  setOrdersWaitingOpen(false);
+                                }}
+                              >
+                                {dept}
+                              </Badge>
+                            );
+                          })}
                         </div>
                         
                         {/* Date */}
