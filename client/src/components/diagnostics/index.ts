@@ -9,3 +9,4 @@ export { PremiumPatientBanner } from "./PremiumPatientBanner";
 export { PremiumOrderCard } from "./PremiumOrderCard";
 export { PremiumTestsOrdered } from "./PremiumTestsOrdered";
 export { PremiumContextStrip } from "./PremiumContextStrip";
+export { OrderContextStrip } from "./OrderContextStrip";

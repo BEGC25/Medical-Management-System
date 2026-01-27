@@ -76,7 +76,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
 import { timeAgo } from "@/lib/time-utils";
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumOrderCard, PremiumTestsOrdered, PremiumContextStrip } from "@/components/diagnostics";
+import { ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, OrderContextStrip } from "@/components/diagnostics";
 import { LAB_TEST_CATALOG, getLabCategoryLabel, type LabTestCategory } from "@/lib/diagnostic-catalog";
 import { interpretLabResults } from "@/lib/lab-interpretation";
 import { isTestAbnormal, isFieldAbnormal, getReferenceRange, getUnit, getTestCategoryLabel } from "@/lib/lab-abnormality";
@@ -1645,6 +1645,16 @@ return (
           {/* VIEW MODE - Unified diagnostic result UI */}
           {selectedLabTest && viewMode === "view" && (
             <div className="space-y-4 px-6 max-h-[calc(90vh-180px)] overflow-y-auto">
+              {/* Order Context Strip - shows tests, priority, payment, dates */}
+              <OrderContextStrip
+                modality="lab"
+                tests={parseJSON<string[]>(selectedLabTest.tests, [])}
+                priority={selectedLabTest.priority || "routine"}
+                paymentStatus={selectedLabTest.paymentStatus || "unpaid"}
+                requestedDate={selectedLabTest.requestedDate}
+                completedDate={selectedLabTest.completedDate}
+              />
+
               {/* Action Buttons */}
               <div className="flex items-center justify-end gap-2 mb-2">
                 <Button
@@ -1664,23 +1674,6 @@ return (
                   Print
                 </Button>
               </div>
-
-              {/* Hero Card */}
-              <PremiumOrderCard
-                modality="lab"
-                title={`${selectedLabTest.category.charAt(0).toUpperCase() + selectedLabTest.category.slice(1)} Tests`}
-                subtitle={selectedLabTest.category}
-                testCount={parseJSON<string[]>(selectedLabTest.tests, []).length}
-                status="completed"
-                requestedAt={selectedLabTest.requestedDate}
-                completedAt={selectedLabTest.completedDate}
-              />
-
-              {/* Tests Ordered Section */}
-              <PremiumTestsOrdered
-                modality="lab"
-                tests={parseJSON<string[]>(selectedLabTest.tests, [])}
-              />
 
               {/* Laboratory Results Section */}
               <div>
@@ -1871,11 +1864,11 @@ return (
             <div className="px-6 max-h-[calc(90vh-180px)] overflow-y-auto">
              <div className="space-y-6">
               {/* Context Strip for EDIT mode */}
-              <PremiumContextStrip
+              <OrderContextStrip
                 modality="lab"
                 tests={parseJSON<string[]>(selectedLabTest.tests, [])}
-                priority={selectedLabTest.priority as any}
-                paymentStatus={selectedLabTest.paymentStatus as any}
+                priority={selectedLabTest.priority || "routine"}
+                paymentStatus={selectedLabTest.paymentStatus || "unpaid"}
                 requestedDate={selectedLabTest.requestedDate}
               />
               

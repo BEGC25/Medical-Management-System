@@ -18,19 +18,31 @@ interface UnifiedModalHeaderProps {
 
 const modalityConfig = {
   lab: {
-    gradient: "from-blue-600 to-blue-500",
+    iconBg: "bg-blue-100 dark:bg-blue-900/40",
+    iconColor: "text-blue-600 dark:text-blue-400",
     icon: Beaker,
   },
   xray: {
-    gradient: "from-blue-600 to-cyan-500",
+    iconBg: "bg-cyan-100 dark:bg-cyan-900/40",
+    iconColor: "text-cyan-600 dark:text-cyan-400",
     icon: FileText,
   },
   ultrasound: {
-    gradient: "from-indigo-600 to-purple-500",
+    iconBg: "bg-violet-100 dark:bg-violet-900/40",
+    iconColor: "text-violet-600 dark:text-violet-400",
     icon: Waves,
   },
 };
 
+/**
+ * UnifiedModalHeader - A single source of truth for patient identity in diagnostic modals.
+ * 
+ * Key design principles:
+ * - Patient identity (name + age/gender formatted 30/M + patient ID) appears ONLY here
+ * - Reduced height with restrained styling (no tall saturated gradients)
+ * - Clean white/light surface with subtle border
+ * - Same layout across Lab/X-ray/Ultrasound
+ */
 export function UnifiedModalHeader({
   modality,
   title,
@@ -43,60 +55,65 @@ export function UnifiedModalHeader({
   const config = modalityConfig[modality];
   const Icon = config.icon;
 
+  // Format patient demographics as "30/M" style
+  const formatDemographics = () => {
+    if (!patient) return null;
+    const parts: string[] = [];
+    if (patient.age) parts.push(`${patient.age}`);
+    if (patient.gender) {
+      const g = patient.gender.charAt(0).toUpperCase();
+      parts.push(g);
+    }
+    return parts.length > 0 ? parts.join('/') : null;
+  };
+
+  const demographics = formatDemographics();
+
   return (
-    <div className={`bg-gradient-to-r ${config.gradient} text-white p-6 -m-6 mb-6 rounded-t-xl shadow-lg`}>
-      <div className="flex items-start justify-between gap-4">
-        {/* Left side: Icon + Title + Subtitle */}
-        <div className="flex items-start gap-4 flex-1 min-w-0">
-          <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl flex-shrink-0">
-            <Icon className="w-7 h-7 text-white" />
+    <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 md:px-6 py-3 md:py-4 -mx-6 -mt-6 mb-4 rounded-t-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
+        {/* Left side: Icon + Title */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-9 h-9 md:w-10 md:h-10 rounded-lg ${config.iconBg} flex items-center justify-center flex-shrink-0`}>
+            <Icon className={`w-4 h-4 md:w-5 md:h-5 ${config.iconColor}`} />
           </div>
           
-          <div className="flex-1 min-w-0">
-            {/* Title Row with Test/Exam Info */}
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-2xl font-bold text-white">
+              <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
                 {title}
               </h2>
               {(testId || examInfo) && (
                 <>
-                  <span className="text-white/60">•</span>
-                  <span className="text-lg font-medium text-white/90">
+                  <span className="text-gray-400 hidden md:inline">•</span>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
                     {testId || examInfo}
                   </span>
                 </>
               )}
             </div>
-            
-            {/* Subtitle */}
             {subtitle && (
-              <p className="text-sm text-white/80 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 hidden md:block">
                 {subtitle}
               </p>
             )}
           </div>
         </div>
 
-        {/* Right side: Patient Info + Close Button */}
-        <div className="flex items-start gap-4 flex-shrink-0">
-          {/* Patient Demographics - Inline and Scannable */}
+        {/* Right side: Patient Info (single source of truth) + Close Button */}
+        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+          {/* Patient Demographics - Single source of truth */}
           {patient && (
-            <div className="hidden md:flex items-center gap-2 text-sm bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/20">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-white">{patient.name}</span>
-                {(patient.age || patient.gender || patient.patientId) && (
-                  <>
-                    <span className="text-white/60">•</span>
-                    <div className="flex items-center gap-2 text-white/90">
-                      {patient.age && <span>{patient.age}y</span>}
-                      {patient.age && patient.gender && <span className="text-white/60">•</span>}
-                      {patient.gender && <span>{patient.gender}</span>}
-                      {(patient.age || patient.gender) && <span className="text-white/60">•</span>}
-                      <span className="font-mono text-xs">{patient.patientId}</span>
-                    </div>
-                  </>
-                )}
-              </div>
+            <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm bg-white dark:bg-gray-800 rounded-md px-2 md:px-3 py-1 md:py-1.5 border border-gray-200 dark:border-gray-600 shadow-sm">
+              <span className="font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[120px] md:max-w-none">{patient.name}</span>
+              {demographics && (
+                <>
+                  <span className="text-gray-400">•</span>
+                  <span className="text-gray-600 dark:text-gray-400">{demographics}</span>
+                </>
+              )}
+              <span className="text-gray-400">•</span>
+              <span className="font-mono text-[10px] md:text-xs text-gray-500 dark:text-gray-400">{patient.patientId}</span>
             </div>
           )}
 
@@ -104,35 +121,14 @@ export function UnifiedModalHeader({
           {onClose && (
             <button
               onClick={onClose}
-              className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-all flex-shrink-0"
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md p-1 md:p-1.5 transition-colors flex-shrink-0"
               aria-label="Close"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 md:w-5 md:h-5" />
             </button>
           )}
         </div>
       </div>
-
-      {/* Patient Info Row for Mobile - Below Title */}
-      {patient && (
-        <div className="md:hidden mt-4 flex items-center gap-2 text-sm bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-white">{patient.name}</span>
-            {(patient.age || patient.gender || patient.patientId) && (
-              <>
-                <span className="text-white/60">•</span>
-                <div className="flex items-center gap-2 text-white/90 flex-wrap">
-                  {patient.age && <span>{patient.age}y</span>}
-                  {patient.age && patient.gender && <span className="text-white/60">•</span>}
-                  {patient.gender && <span>{patient.gender}</span>}
-                  {(patient.age || patient.gender) && <span className="text-white/60">•</span>}
-                  <span className="font-mono text-xs">{patient.patientId}</span>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
