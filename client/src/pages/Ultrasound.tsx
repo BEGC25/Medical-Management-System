@@ -83,7 +83,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, CLINIC_TZ, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getUltrasoundDisplayName } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, PatientInfoHeader, UnifiedModalHeader } from '@/components/diagnostics';
+import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader } from '@/components/diagnostics';
 import { ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
