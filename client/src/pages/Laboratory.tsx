@@ -76,7 +76,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
 import { timeAgo } from "@/lib/time-utils";
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumOrderCard, PremiumTestsOrdered, PremiumContextStrip } from "@/components/diagnostics";
+import { ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumTestsOrdered, OrderContextStrip } from "@/components/diagnostics";
 import { LAB_TEST_CATALOG, getLabCategoryLabel, type LabTestCategory } from "@/lib/diagnostic-catalog";
 import { interpretLabResults } from "@/lib/lab-interpretation";
 import { isTestAbnormal, isFieldAbnormal, getReferenceRange, getUnit, getTestCategoryLabel } from "@/lib/lab-abnormality";
@@ -1627,12 +1627,12 @@ return (
       </div>
 
       <Dialog open={resultsModalOpen} onOpenChange={setResultsModalOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden border-0">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden border border-slate-200 bg-white p-0">
           <UnifiedModalHeader
             modality="lab"
             title="Laboratory Test Results"
             subtitle="Record laboratory test results and findings"
-            testId={selectedLabTest?.testId}
+            testId={viewMode === "view" ? selectedLabTest?.testId : undefined}
             patient={reportPatient ? {
               name: fullName(reportPatient),
               age: reportPatient.age,
@@ -1644,14 +1644,14 @@ return (
 
           {/* VIEW MODE - Unified diagnostic result UI */}
           {selectedLabTest && viewMode === "view" && (
-            <div className="space-y-4 px-6 max-h-[calc(90vh-180px)] overflow-y-auto">
+            <div className="space-y-4 px-6 max-h-[calc(90vh-210px)] overflow-y-auto">
               {/* Action Buttons */}
               <div className="flex items-center justify-end gap-2 mb-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setViewMode("edit")}
-                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  className="text-slate-700 border-slate-200 hover:bg-slate-100"
                 >
                   Edit Results
                 </Button>
@@ -1665,15 +1665,13 @@ return (
                 </Button>
               </div>
 
-              {/* Hero Card */}
-              <PremiumOrderCard
+              <OrderContextStrip
                 modality="lab"
-                title={`${selectedLabTest.category.charAt(0).toUpperCase() + selectedLabTest.category.slice(1)} Tests`}
-                subtitle={selectedLabTest.category}
-                testCount={parseJSON<string[]>(selectedLabTest.tests, []).length}
-                status="completed"
-                requestedAt={selectedLabTest.requestedDate}
-                completedAt={selectedLabTest.completedDate}
+                tests={parseJSON<string[]>(selectedLabTest.tests, [])}
+                priority={selectedLabTest.priority as any}
+                paymentStatus={selectedLabTest.paymentStatus as any}
+                requestedDate={selectedLabTest.requestedDate}
+                completedDate={selectedLabTest.completedDate}
               />
 
               {/* Tests Ordered Section */}
@@ -1867,17 +1865,16 @@ return (
               })()}
             </div>
           )}
-          {selectedLabTest && viewMode === "edit" && (
-            <div className="px-6 max-h-[calc(90vh-180px)] overflow-y-auto">
-             <div className="space-y-6">
-              {/* Context Strip for EDIT mode */}
-              <PremiumContextStrip
-                modality="lab"
-                tests={parseJSON<string[]>(selectedLabTest.tests, [])}
-                priority={selectedLabTest.priority as any}
-                paymentStatus={selectedLabTest.paymentStatus as any}
-                requestedDate={selectedLabTest.requestedDate}
-              />
+          {selectedLabTest && viewMode === "edit" && (
+            <div className="px-6 max-h-[calc(90vh-210px)] overflow-y-auto">
+             <div className="space-y-6">
+              <OrderContextStrip
+                modality="lab"
+                tests={parseJSON<string[]>(selectedLabTest.tests, [])}
+                priority={selectedLabTest.priority as any}
+                paymentStatus={selectedLabTest.paymentStatus as any}
+                requestedDate={selectedLabTest.requestedDate}
+              />
               
               {/* Photo uploader */}
               <div className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-blue-50 dark:bg-blue-900/20">

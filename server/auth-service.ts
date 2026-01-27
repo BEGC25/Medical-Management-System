@@ -40,7 +40,7 @@ export async function verifyPassword(
     const [salt, hash] = storedHash.split(':');
     if (!salt || !hash) return false;
     
-    const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
+    const derivedKey = (await scryptAsync(password, Buffer.from(salt, "hex"), 64)) as Buffer;
     const storedBuffer = Buffer.from(hash, 'hex');
     
     // Constant-time comparison to prevent timing attacks

@@ -23,23 +23,20 @@ interface PremiumContextStripProps {
 
 const modalityConfig = {
   lab: {
-    gradient: "from-blue-500/10 via-indigo-500/5 to-blue-500/10 dark:from-blue-500/20 dark:via-indigo-500/10 dark:to-blue-500/20",
-    borderColor: "border-blue-200 dark:border-blue-700",
+    borderColor: "border-slate-200 dark:border-slate-700",
     icon: "🧪",
   },
   xray: {
-    gradient: "from-cyan-500/10 via-blue-500/5 to-cyan-500/10 dark:from-cyan-500/20 dark:via-blue-500/10 dark:to-cyan-500/20",
-    borderColor: "border-cyan-200 dark:border-cyan-700",
+    borderColor: "border-slate-200 dark:border-slate-700",
     icon: "⚡",
   },
   ultrasound: {
-    gradient: "from-violet-500/10 via-purple-500/5 to-violet-500/10 dark:from-violet-500/20 dark:via-purple-500/10 dark:to-violet-500/20",
-    borderColor: "border-violet-200 dark:border-violet-700",
+    borderColor: "border-slate-200 dark:border-slate-700",
     icon: "📡",
   }
 };
 
-const BADGE_BASE_CLASS = "bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 text-xs font-medium px-2.5 py-0.5";
+const BADGE_BASE_CLASS = "bg-slate-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 text-xs font-medium px-2.5 py-0.5";
 
 const priorityConfig = {
   routine: {
@@ -95,7 +92,7 @@ export function PremiumContextStrip({
   const paymentConf = paymentConfig[paymentStatus];
 
   return (
-    <div className={`relative overflow-hidden rounded-xl border ${config.borderColor} bg-gradient-to-r ${config.gradient} p-4 shadow-sm mb-6`}>
+    <div className={`relative overflow-hidden rounded-lg border ${config.borderColor} bg-white dark:bg-gray-900 p-4 shadow-sm mb-6`}>
       <div className="flex flex-col gap-3">
         {/* Top Row: Tests/Exam Info */}
         <div className="flex items-center gap-2 flex-wrap">

@@ -83,7 +83,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, CLINIC_TZ, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getUltrasoundDisplayName } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumOrderCard, PremiumTestsOrdered, PremiumContextStrip } from '@/components/diagnostics';
+import { ResultSectionCard, KeyFindingCard, UnifiedModalHeader, OrderContextStrip } from '@/components/diagnostics';
 import { ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1263,16 +1263,13 @@ export default function Ultrasound() {
 
       {/* Results/Report Dialog */}
       <Dialog open={resultsModalOpen} onOpenChange={setResultsModalOpen}>
-        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border-0">
+        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border border-slate-200 bg-white p-0">
           {/* Unified Modal Header */}
           {reportPatient && selectedUltrasoundExam && (
             <UnifiedModalHeader
               modality="ultrasound"
               title="Ultrasound Examination"
               subtitle="Complete ultrasound findings and diagnostic impression"
-              examInfo={selectedUltrasoundExam.specificExam 
-                ? `${selectedUltrasoundExam.examType} - ${selectedUltrasoundExam.specificExam}` 
-                : selectedUltrasoundExam.examType}
               patient={{
                 name: fullName(reportPatient),
                 age: reportPatient.age,
@@ -1284,7 +1281,7 @@ export default function Ultrasound() {
           )}
 
           {/* Scrollable Content Wrapper */}
-          <div className="px-6 max-h-[calc(95vh-180px)] overflow-y-auto">
+          <div className="px-6 max-h-[calc(95vh-210px)] overflow-y-auto">
             {/* VIEW MODE - Unified diagnostic result UI */}
             {viewMode === "view" && selectedUltrasoundExam && (
               <div className="space-y-4 pb-6">
@@ -1294,7 +1291,7 @@ export default function Ultrasound() {
                   variant="outline"
                   size="sm"
                   onClick={() => setViewMode("edit")}
-                  className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                  className="text-slate-700 border-slate-200 hover:bg-slate-100"
                 >
                   Edit Results
                 </Button>
@@ -1308,14 +1305,14 @@ export default function Ultrasound() {
                 </Button>
               </div>
 
-              {/* Hero Card */}
-              <PremiumOrderCard
+              <OrderContextStrip
                 modality="ultrasound"
-                title={getUltrasoundDisplayName(selectedUltrasoundExam)}
-                subtitle={selectedUltrasoundExam.specificExam || undefined}
-                status="completed"
-                requestedAt={selectedUltrasoundExam.requestedDate}
-                completedAt={selectedUltrasoundExam.reportDate}
+                examType={selectedUltrasoundExam.examType || undefined}
+                scanRegion={selectedUltrasoundExam.specificExam || undefined}
+                priority={selectedUltrasoundExam.priority as any || "routine"}
+                paymentStatus={selectedUltrasoundExam.paymentStatus as any || "unpaid"}
+                requestedDate={selectedUltrasoundExam.requestedDate}
+                completedDate={selectedUltrasoundExam.reportDate}
               />
 
               {/* Sonographic Findings Section */}
@@ -1390,8 +1387,7 @@ export default function Ultrasound() {
             {/* EDIT MODE */}
             {viewMode === "edit" && (
             <>
-              {/* Context Strip for EDIT mode */}
-              <PremiumContextStrip
+              <OrderContextStrip
                 modality="ultrasound"
                 examType={selectedUltrasoundExam?.examType || undefined}
                 scanRegion={selectedUltrasoundExam?.specificExam || undefined}

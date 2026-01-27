@@ -18,15 +18,15 @@ interface UnifiedModalHeaderProps {
 
 const modalityConfig = {
   lab: {
-    gradient: "from-blue-600 to-blue-500",
+    gradient: "from-slate-50 to-white",
     icon: Beaker,
   },
   xray: {
-    gradient: "from-blue-600 to-cyan-500",
+    gradient: "from-slate-50 to-white",
     icon: FileText,
   },
   ultrasound: {
-    gradient: "from-indigo-600 to-purple-500",
+    gradient: "from-slate-50 to-white",
     icon: Waves,
   },
 };
@@ -44,25 +44,25 @@ export function UnifiedModalHeader({
   const Icon = config.icon;
 
   return (
-    <div className={`bg-gradient-to-r ${config.gradient} text-white p-6 -m-6 mb-6 rounded-t-xl shadow-lg`}>
+    <div className={`bg-gradient-to-r ${config.gradient} text-slate-900 p-4 -m-6 mb-4 rounded-t-xl border-b border-slate-200`}>
       <div className="flex items-start justify-between gap-4">
         {/* Left side: Icon + Title + Subtitle */}
         <div className="flex items-start gap-4 flex-1 min-w-0">
-          <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-xl flex-shrink-0">
-            <Icon className="w-7 h-7 text-white" />
+          <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shadow-sm flex-shrink-0">
+            <Icon className="w-6 h-6 text-slate-700" />
           </div>
           
           <div className="flex-1 min-w-0">
             {/* Title Row with Test/Exam Info */}
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-2xl font-bold text-white">
+              <h2 className="text-xl font-bold text-slate-900">
                 {title}
               </h2>
-              {(testId || examInfo) && (
+              {testId && (
                 <>
-                  <span className="text-white/60">•</span>
-                  <span className="text-lg font-medium text-white/90">
-                    {testId || examInfo}
+                  <span className="text-slate-400">•</span>
+                  <span className="text-base font-medium text-slate-600">
+                    {testId}
                   </span>
                 </>
               )}
@@ -70,7 +70,7 @@ export function UnifiedModalHeader({
             
             {/* Subtitle */}
             {subtitle && (
-              <p className="text-sm text-white/80 mt-1">
+              <p className="text-sm text-slate-600 mt-0.5">
                 {subtitle}
               </p>
             )}
@@ -81,17 +81,17 @@ export function UnifiedModalHeader({
         <div className="flex items-start gap-4 flex-shrink-0">
           {/* Patient Demographics - Inline and Scannable */}
           {patient && (
-            <div className="hidden md:flex items-center gap-2 text-sm bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/20">
+            <div className="hidden md:flex items-center gap-2 text-sm bg-white rounded-lg px-3 py-1.5 border border-slate-200 shadow-sm">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-white">{patient.name}</span>
+                <span className="font-semibold text-slate-900">{patient.name}</span>
                 {(patient.age || patient.gender || patient.patientId) && (
                   <>
-                    <span className="text-white/60">•</span>
-                    <div className="flex items-center gap-2 text-white/90">
+                    <span className="text-slate-300">•</span>
+                    <div className="flex items-center gap-2 text-slate-600">
                       {patient.age && <span>{patient.age}y</span>}
-                      {patient.age && patient.gender && <span className="text-white/60">•</span>}
+                      {patient.age && patient.gender && <span className="text-slate-300">•</span>}
                       {patient.gender && <span>{patient.gender}</span>}
-                      {(patient.age || patient.gender) && <span className="text-white/60">•</span>}
+                      {(patient.age || patient.gender) && <span className="text-slate-300">•</span>}
                       <span className="font-mono text-xs">{patient.patientId}</span>
                     </div>
                   </>
@@ -101,31 +101,31 @@ export function UnifiedModalHeader({
           )}
 
           {/* Close Button */}
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-all flex-shrink-0"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg p-2 transition-all flex-shrink-0"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
         </div>
       </div>
 
       {/* Patient Info Row for Mobile - Below Title */}
       {patient && (
-        <div className="md:hidden mt-4 flex items-center gap-2 text-sm bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
+        <div className="md:hidden mt-3 flex items-center gap-2 text-sm bg-white rounded-lg px-3 py-2 border border-slate-200 shadow-sm">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-white">{patient.name}</span>
+            <span className="font-semibold text-slate-900">{patient.name}</span>
             {(patient.age || patient.gender || patient.patientId) && (
               <>
-                <span className="text-white/60">•</span>
-                <div className="flex items-center gap-2 text-white/90 flex-wrap">
+                <span className="text-slate-300">•</span>
+                <div className="flex items-center gap-2 text-slate-600 flex-wrap">
                   {patient.age && <span>{patient.age}y</span>}
-                  {patient.age && patient.gender && <span className="text-white/60">•</span>}
+                  {patient.age && patient.gender && <span className="text-slate-300">•</span>}
                   {patient.gender && <span>{patient.gender}</span>}
-                  {(patient.age || patient.gender) && <span className="text-white/60">•</span>}
+                  {(patient.age || patient.gender) && <span className="text-slate-300">•</span>}
                   <span className="font-mono text-xs">{patient.patientId}</span>
                 </div>
               </>

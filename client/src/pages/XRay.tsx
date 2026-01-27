@@ -79,8 +79,8 @@ import { apiRequest } from '@/lib/queryClient';
 import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
-import { getXrayDisplayName, toTitleCase } from '@/lib/display-utils';
-import { ResultPatientHeader, ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, PremiumOrderCard, PremiumTestsOrdered, PremiumContextStrip } from '@/components/diagnostics';
+import { toTitleCase } from '@/lib/display-utils';
+import { ResultSectionCard, KeyFindingCard, UnifiedModalHeader, OrderContextStrip } from '@/components/diagnostics';
 import { XRAY_EXAM_TYPES, XRAY_BODY_PARTS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -111,6 +111,14 @@ function getExamTypeLabel(examType: string): string {
     'skull': 'Skull',
   };
   return labels[examType.toLowerCase()] || toTitleCase(examType);
+}
+
+function getXrayDisplayName(exam: XrayExam): string {
+  const typeLabel = getExamTypeLabel(exam.examType);
+  if (exam.bodyPart) {
+    return `${typeLabel} - ${exam.bodyPart}`;
+  }
+  return `${typeLabel} X-Ray`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -735,7 +743,7 @@ export default function XRay() {
       <div
         role="button"
         tabIndex={canPerform ? 0 : -1}
-        aria-label={`${patient ? fullName(patient) : exam.patientId} - ${getXrayDisplayName(exam)} exam`}
+                aria-label={`${patient ? fullName(patient) : exam.patientId} - ${getXrayDisplayName(exam)} exam`}
         className={cx(
           "rounded-lg p-2 border-l-4 cursor-pointer transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:shadow-[0_4px_16px_rgba(37,99,235,0.15)] hover:-translate-y-0.5 group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2",
           isCompleted && "border-l-emerald-500 bg-white dark:bg-gray-800",
@@ -1116,34 +1124,33 @@ export default function XRay() {
 
       {/* Results/Report Dialog */}
       <Dialog open={resultsModalOpen} onOpenChange={setResultsModalOpen}>
-        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border-0">
-          {reportPatient && selectedXrayExam && (
-            <UnifiedModalHeader
-              modality="xray"
-              title="X-Ray Examination"
-              subtitle="Complete radiological findings and diagnosis"
-              examInfo={`${selectedXrayExam.examType?.charAt(0).toUpperCase() + selectedXrayExam.examType?.slice(1) || ''}${selectedXrayExam.bodyPart ? ' • ' + selectedXrayExam.bodyPart : ''}`}
-              patient={{
-                name: fullName(reportPatient),
-                age: reportPatient.age,
-                gender: reportPatient.gender,
-                patientId: reportPatient.patientId
-              }}
-              onClose={() => setResultsModalOpen(false)}
-            />
-          )}
+      <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border border-slate-200 bg-white p-0">
+        {reportPatient && selectedXrayExam && (
+          <UnifiedModalHeader
+            modality="xray"
+            title="X-Ray Examination"
+            subtitle="Complete radiological findings and diagnosis"
+            patient={{
+              name: fullName(reportPatient),
+              age: reportPatient.age,
+              gender: reportPatient.gender,
+              patientId: reportPatient.patientId
+            }}
+            onClose={() => setResultsModalOpen(false)}
+          />
+        )}
 
-          <div className="px-6 max-h-[calc(95vh-180px)] overflow-y-auto">
-            {/* VIEW MODE - Unified diagnostic result UI */}
-            {viewMode === "view" && selectedXrayExam && (
-              <div className="space-y-4 pb-6">
+        <div className="px-6 max-h-[calc(95vh-210px)] overflow-y-auto">
+          {/* VIEW MODE - Unified diagnostic result UI */}
+          {viewMode === "view" && selectedXrayExam && (
+            <div className="space-y-4 pb-6">
               {/* Action Buttons */}
               <div className="flex items-center justify-end gap-2 mb-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setViewMode("edit")}
-                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  className="text-slate-700 border-slate-200 hover:bg-slate-100"
                 >
                   Edit Results
                 </Button>
@@ -1157,14 +1164,15 @@ export default function XRay() {
                 </Button>
               </div>
 
-              {/* Hero Card */}
-              <PremiumOrderCard
+              <OrderContextStrip
                 modality="xray"
-                title={getXrayDisplayName(selectedXrayExam)}
-                subtitle={selectedXrayExam.bodyPart || undefined}
-                status="completed"
-                requestedAt={selectedXrayExam.requestedDate}
-                completedAt={selectedXrayExam.reportDate}
+                examType={selectedXrayExam.examType || undefined}
+                bodyPart={selectedXrayExam.bodyPart || undefined}
+                views={selectedXrayExam.views || undefined}
+                priority={selectedXrayExam.priority as any || "routine"}
+                paymentStatus={selectedXrayExam.paymentStatus as any || "unpaid"}
+                requestedDate={selectedXrayExam.requestedDate}
+                completedDate={selectedXrayExam.reportDate}
               />
 
               {/* Radiological Findings Section */}
@@ -1258,8 +1266,7 @@ export default function XRay() {
             {/* EDIT MODE */}
             {viewMode === "edit" && (
             <>
-              {/* Context Strip for EDIT mode */}
-              <PremiumContextStrip
+              <OrderContextStrip
                 modality="xray"
                 examType={selectedXrayExam?.examType || undefined}
                 bodyPart={selectedXrayExam?.bodyPart || undefined}
