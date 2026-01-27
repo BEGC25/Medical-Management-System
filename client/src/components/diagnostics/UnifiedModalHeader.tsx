@@ -1,18 +1,16 @@
 import * as React from "react";
-import { X, Beaker, FileText, Waves } from "lucide-react";
+import { X, Beaker, FileText, Waves, Printer, Edit } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface UnifiedModalHeaderProps {
   modality: 'lab' | 'xray' | 'ultrasound';
   title: string;
   subtitle?: string;
-  testId?: string;
-  examInfo?: string;
-  patient?: {
-    name: string;
-    age?: string | null;
-    gender?: string | null;
-    patientId: string;
-  };
+  // Action callbacks for Edit/Print buttons (shown in header when applicable)
+  onEdit?: () => void;
+  onPrint?: () => void;
+  showEditButton?: boolean;
+  showPrintButton?: boolean;
   onClose?: () => void;
 }
 
@@ -35,96 +33,83 @@ const modalityConfig = {
 };
 
 /**
- * UnifiedModalHeader - A single source of truth for patient identity in diagnostic modals.
+ * UnifiedModalHeader - Compact header chrome for diagnostic modals.
  * 
- * Key design principles:
- * - Patient identity (name + age/gender formatted 30/M + patient ID) appears ONLY here
- * - Reduced height with restrained styling (no tall saturated gradients)
- * - Clean white/light surface with subtle border
- * - Same layout across Lab/X-ray/Ultrasound
+ * Key design principles per spec:
+ * - Header = chrome only: modality icon + title (left), Edit/Print buttons when applicable (right), Close
+ * - Do NOT show patient pill / patient identity in the header
+ * - Keep header compact (no tall saturated gradient bar)
+ * - Patient info is now in SummaryCard directly under header
  */
 export function UnifiedModalHeader({
   modality,
   title,
   subtitle,
-  testId,
-  examInfo,
-  patient,
+  onEdit,
+  onPrint,
+  showEditButton = false,
+  showPrintButton = false,
   onClose,
 }: UnifiedModalHeaderProps) {
   const config = modalityConfig[modality];
   const Icon = config.icon;
 
-  // Format patient demographics as "30/M" style
-  const formatDemographics = () => {
-    if (!patient) return null;
-    const parts: string[] = [];
-    if (patient.age) parts.push(`${patient.age}`);
-    if (patient.gender) {
-      const g = patient.gender.charAt(0).toUpperCase();
-      parts.push(g);
-    }
-    return parts.length > 0 ? parts.join('/') : null;
-  };
-
-  const demographics = formatDemographics();
-
   return (
-    <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 md:px-6 py-3 md:py-4 -mx-6 -mt-6 mb-4 rounded-t-xl">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
+    <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 md:px-6 py-3 -mx-6 -mt-6 mb-4 rounded-t-xl">
+      <div className="flex items-center justify-between gap-3">
         {/* Left side: Icon + Title */}
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`w-9 h-9 md:w-10 md:h-10 rounded-lg ${config.iconBg} flex items-center justify-center flex-shrink-0`}>
-            <Icon className={`w-4 h-4 md:w-5 md:h-5 ${config.iconColor}`} />
+          <div className={`w-9 h-9 rounded-lg ${config.iconBg} flex items-center justify-center flex-shrink-0`}>
+            <Icon className={`w-4 h-4 ${config.iconColor}`} />
           </div>
           
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
-                {title}
-              </h2>
-              {(testId || examInfo) && (
-                <>
-                  <span className="text-gray-400 hidden md:inline">•</span>
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
-                    {testId || examInfo}
-                  </span>
-                </>
-              )}
-            </div>
+            <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
+              {title}
+            </h2>
             {subtitle && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 hidden md:block">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 hidden md:block truncate">
                 {subtitle}
               </p>
             )}
           </div>
         </div>
 
-        {/* Right side: Patient Info (single source of truth) + Close Button */}
-        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
-          {/* Patient Demographics - Single source of truth */}
-          {patient && (
-            <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm bg-white dark:bg-gray-800 rounded-md px-2 md:px-3 py-1 md:py-1.5 border border-gray-200 dark:border-gray-600 shadow-sm">
-              <span className="font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[120px] md:max-w-none">{patient.name}</span>
-              {demographics && (
-                <>
-                  <span className="text-gray-400">•</span>
-                  <span className="text-gray-600 dark:text-gray-400">{demographics}</span>
-                </>
-              )}
-              <span className="text-gray-400">•</span>
-              <span className="font-mono text-[10px] md:text-xs text-gray-500 dark:text-gray-400">{patient.patientId}</span>
-            </div>
+        {/* Right side: Edit/Print buttons + Close Button */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {showEditButton && onEdit && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onEdit}
+              className="text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-900/20"
+            >
+              <Edit className="w-4 h-4 mr-1.5" />
+              Edit
+            </Button>
+          )}
+          
+          {showPrintButton && onPrint && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onPrint}
+            >
+              <Printer className="w-4 h-4 mr-1.5" />
+              Print
+            </Button>
           )}
 
           {/* Close Button */}
           {onClose && (
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md p-1 md:p-1.5 transition-colors flex-shrink-0"
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md p-1.5 transition-colors flex-shrink-0"
               aria-label="Close"
             >
-              <X className="w-4 h-4 md:w-5 md:h-5" />
+              <X className="w-5 h-5" />
             </button>
           )}
         </div>

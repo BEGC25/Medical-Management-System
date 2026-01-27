@@ -10,3 +10,5 @@ export { PremiumOrderCard } from "./PremiumOrderCard";
 export { PremiumTestsOrdered } from "./PremiumTestsOrdered";
 export { PremiumContextStrip } from "./PremiumContextStrip";
 export { OrderContextStrip } from "./OrderContextStrip";
+export { SummaryCard } from "./SummaryCard";
+export { TestsOrderedRow } from "./TestsOrderedRow";
