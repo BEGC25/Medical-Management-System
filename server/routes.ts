@@ -2418,7 +2418,7 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
     const pharmacyOrdersUnpaid = await Promise.all(pharmacyOrdersPromises);
     unpaidOrders.push(...pharmacyOrdersUnpaid);
 
-    res.json(unpaidOrders);
+    res.json(serializeBigInt(unpaidOrders));
   } catch (error) {
     console.error("Error fetching unpaid orders:", error);
     res.status(500).json({ error: "Failed to fetch unpaid orders" });
@@ -2461,11 +2461,14 @@ router.post("/api/pharmacy-orders", async (req, res) => {
     // Serialize BigInt values to avoid JSON serialization errors with PostgreSQL
     res.status(201).json(serializeBigInt(pharmacyOrder));
   } catch (error) {
-    // Log full error details for debugging
-    console.error("Error creating pharmacy order:", error);
-    console.error("Error type:", error instanceof Error ? error.constructor.name : typeof error);
-    console.error("Error message:", error instanceof Error ? error.message : String(error));
-    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    // Log full error details for server debugging
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : "No stack trace";
+    console.error("Error creating pharmacy order:", {
+      type: error instanceof Error ? error.constructor.name : typeof error,
+      message: errorMessage,
+      stack: errorStack
+    });
     
     if (error instanceof z.ZodError) {
       return res
@@ -2473,11 +2476,11 @@ router.post("/api/pharmacy-orders", async (req, res) => {
         .json({ error: "Invalid pharmacy order data", details: error.errors });
     }
     
-    // Include error details in response for better debugging
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    // Only include error details in development mode for security
+    const isDev = process.env.NODE_ENV !== "production";
     res.status(500).json({ 
       error: "Failed to create pharmacy order",
-      details: errorMessage
+      ...(isDev && { details: errorMessage })
     });
   }
 });
@@ -2491,11 +2494,14 @@ router.patch("/api/pharmacy-orders/:orderId", async (req, res) => {
     );
     res.json(serializeBigInt(pharmacyOrder));
   } catch (error) {
-    console.error("Error updating pharmacy order:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error updating pharmacy order:", { message: errorMessage });
+    
+    // Only include error details in development mode for security
+    const isDev = process.env.NODE_ENV !== "production";
     res.status(500).json({ 
       error: "Failed to update pharmacy order",
-      details: errorMessage
+      ...(isDev && { details: errorMessage })
     });
   }
 });
@@ -2507,11 +2513,14 @@ router.patch("/api/pharmacy-orders/:orderId/dispense", async (req: any, res) => 
     );
     res.json(serializeBigInt(pharmacyOrder));
   } catch (error) {
-    console.error("Error dispensing pharmacy order:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error dispensing pharmacy order:", { message: errorMessage });
+    
+    // Only include error details in development mode for security
+    const isDev = process.env.NODE_ENV !== "production";
     res.status(500).json({ 
       error: "Failed to dispense pharmacy order",
-      details: errorMessage
+      ...(isDev && { details: errorMessage })
     });
   }
 });
