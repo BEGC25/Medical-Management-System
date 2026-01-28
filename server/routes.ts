@@ -1703,6 +1703,7 @@ router.post("/api/payments", async (req: any, res) => {
         
         // Determine orderLineId - either from item directly, or find matching unpaid consultation
         let orderLineId = item.orderLineId;
+        let serviceId = item.serviceId;
         
         // If this is a consultation payment without orderLineId, try to find a matching unpaid consultation order line
         if (!orderLineId && item.relatedType === "consultation") {
@@ -1729,11 +1730,25 @@ router.post("/api/payments", async (req: any, res) => {
             }
           }
         }
+
+        // Ensure pharmacy payments always have a serviceId to satisfy NOT NULL constraint
+        if (!serviceId && item.relatedType === "pharmacy_order") {
+          const servicesList = await storage.getServices();
+          const pharmacyService = servicesList.find((s: any) => s.category === "pharmacy" && s.isActive);
+          if (pharmacyService) {
+            serviceId = pharmacyService.id;
+          }
+        }
+
+        // If still missing serviceId, fail early with clear error
+        if (!serviceId) {
+          throw new Error(`Missing serviceId for payment item type ${item.relatedType || "unknown"}`);
+        }
         
         await storage.createPaymentItem({
           paymentId: payment.paymentId,
           orderLineId: orderLineId || undefined, // Link to order line if available
-          serviceId: item.serviceId,
+          serviceId,
           relatedId: item.relatedId,
           relatedType: item.relatedType,
           quantity,
