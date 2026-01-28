@@ -1797,7 +1797,7 @@ export default function Treatment() {
       
       // Submit orders sequentially to avoid race conditions in pharmacy order ID generation
       // Track successes and failures for accurate reporting
-      const results: { success: boolean; drugName: string; error?: string }[] = [];
+      const results: { success: boolean; medication: typeof meds[0]; error?: string }[] = [];
       
       for (const med of meds) {
         try {
@@ -1814,11 +1814,11 @@ export default function Treatment() {
             route: med.route,
             duration: med.duration,
           });
-          results.push({ success: true, drugName: med.drugName });
+          results.push({ success: true, medication: med });
         } catch (error: any) {
           results.push({ 
             success: false, 
-            drugName: med.drugName, 
+            medication: med, 
             error: error?.message || "Unknown error" 
           });
         }
@@ -1834,23 +1834,24 @@ export default function Treatment() {
       const failureCount = results.filter(r => !r.success).length;
       
       if (failureCount === 0) {
-        // All succeeded
+        // All succeeded - clear all medications
         setMedications([]);
         toast({ title: "Medications Ordered", description: "Sent to pharmacy" });
       } else if (successCount === 0) {
-        // All failed
+        // All failed - keep all medications in the list for retry
         toast({ 
           title: "Error", 
           description: "Failed to submit medications", 
           variant: "destructive" 
         });
       } else {
-        // Partial success
-        const failedDrugs = results.filter(r => !r.success).map(r => r.drugName).join(", ");
-        setMedications([]); // Clear all since some were submitted
+        // Partial success - remove only successful medications, keep failed ones for retry
+        const failedMeds = results.filter(r => !r.success).map(r => r.medication);
+        const failedDrugNames = results.filter(r => !r.success).map(r => r.medication.drugName).join(", ");
+        setMedications(failedMeds);
         toast({ 
           title: "Partial Success", 
-          description: `${successCount} medication(s) ordered. Failed: ${failedDrugs}`,
+          description: `${successCount} medication(s) ordered. Failed: ${failedDrugNames}. You can retry the failed medications.`,
           variant: "destructive" 
         });
       }
