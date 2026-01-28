@@ -4099,10 +4099,10 @@ export default function Treatment() {
                         })()}
 
                         {/* --- Existing Results (Filtered + Enhanced Lab View) --- */}
-                        <div className="space-y-4 mt-8 p-5 bg-gradient-to-br from-green-50 via-emerald-50 to-blue-50 dark:from-green-950 dark:via-emerald-950 dark:to-blue-950 border-l-4 border-green-600 rounded-xl shadow-md overflow-hidden">
-                          <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-bold text-lg text-green-800 dark:text-green-300 flex items-center gap-2">
-                              <FileText className="h-5 w-5" />
+                        <div className="space-y-3 mt-6 p-4 bg-gradient-to-br from-green-50 via-emerald-50 to-blue-50 dark:from-green-950 dark:via-emerald-950 dark:to-blue-950 border-l-4 border-green-600 rounded-xl shadow-sm overflow-hidden">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-bold text-base text-green-800 dark:text-green-300 flex items-center gap-2">
+                              <FileText className="h-4 w-4" />
                               Completed Results {qoTab !== 'all' ? `(${qoTab.charAt(0).toUpperCase() + qoTab.slice(1)})` : ''}
                               {(() => {
                                 const completedCount = 
@@ -4110,7 +4110,7 @@ export default function Treatment() {
                                   xrays.filter((x: any) => x.status === "completed").length +
                                   ultrasounds.filter((u: any) => u.status === "completed").length;
                                 return completedCount > 0 ? (
-                                  <span className="text-sm text-green-600 dark:text-green-400 font-normal ml-2">
+                                  <span className="text-xs text-green-600 dark:text-green-400 font-normal ml-1">
                                     ({completedCount})
                                   </span>
                                 ) : null;
@@ -4121,8 +4121,8 @@ export default function Treatment() {
                           {/* Labs */}
                           {(qoTab === "all" || qoTab === "lab") && labTests.filter((t: any) => t.status === "completed").length > 0 && (
                             <div>
-                              <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">Laboratory Tests</h4>
-                              <div className="space-y-3">
+                              <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300 text-sm">Laboratory Tests</h4>
+                              <div className="space-y-2">
                                 {labTests.filter((t: any) => t.status === "completed").map((test: any) => {
                                   const parsedResults = parseJSON<Record<string, Record<string, string>>>(test.results, {});
                                   const testsOrdered = parseJSON<string[]>(test.tests, []);
@@ -4141,60 +4141,62 @@ export default function Treatment() {
                                     // Show count instead of truncated preview - full list shown below in badges
                                     return `Laboratory Tests (${count})`;
                                   };
+
+                                  // Count abnormal results for badge
+                                  const abnormalCount = Object.entries(parsedResults).reduce((count, [testName, testResults]) => {
+                                    // Check if this test panel has any abnormal values
+                                    const hasAbnormal = Object.values(testResults).some(value => {
+                                      // Simple heuristic: values marked with ↑ or ↓ or outside typical ranges
+                                      return typeof value === 'string' && (value.includes('↑') || value.includes('↓') || value.includes('H') || value.includes('L'));
+                                    });
+                                    return count + (hasAbnormal ? 1 : 0);
+                                  }, 0);
                                   
                                   return (
                                     <div 
                                       key={test.testId || test.orderId}
-                                      className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+                                      className="bg-white dark:bg-gray-800 rounded-lg border-l-4 border-l-blue-500 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
                                     >
-                                      {/* Header Row */}
-                                      <div className="p-4 flex justify-between items-start gap-3">
-                                        <div className="flex items-center gap-2 flex-1">
-                                          <FlaskConical className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                                          <div>
-                                            <p className="font-semibold text-base">{getTestTitle()}</p>
-                                            <div className="flex items-center gap-2 mt-1">
-                                              <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                                                <Check className="h-3 w-3 mr-1" />
-                                                Completed
-                                              </Badge>
-                                              {!test.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
-                                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                Requested {formatClinicDayKey(test.requestedDate)}
-                                              </span>
-                                            </div>
+                                      {/* Compact Header Row */}
+                                      <div className="p-3 flex justify-between items-start gap-2">
+                                        <div className="flex items-start gap-2 flex-1 min-w-0">
+                                          <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">
+                                            <FlaskConical className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                           </div>
+                                          <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-bold text-sm text-gray-900 dark:text-gray-100">Lab</span>
+                                              <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">{test.testId}</span>
+                                            </div>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                              {testsOrdered.length > 0 ? testsOrdered.slice(0, 2).join(', ') + (testsOrdered.length > 2 ? ` +${testsOrdered.length - 2}` : '') : test.category || 'Laboratory Test'}
+                                            </p>
+                                          </div>
+                                        </div>
+                                        {/* Right: Status chips + Abnormal badge */}
+                                        <div className="flex flex-wrap items-center gap-1 flex-shrink-0">
+                                          <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 text-[10px] px-1.5 py-0">
+                                            <Check className="h-2.5 w-2.5 mr-0.5" />
+                                            Done
+                                          </Badge>
+                                          {!test.isPaid && (
+                                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">UNPAID</Badge>
+                                          )}
+                                          {keyFinding && (
+                                            <Badge variant="outline" className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-red-300 dark:border-red-700 text-[10px] px-1.5 py-0 flex items-center gap-0.5">
+                                              <AlertCircle className="h-2.5 w-2.5" />
+                                              Abnormal
+                                            </Badge>
+                                          )}
                                         </div>
                                       </div>
 
-                                      {/* Tests Ordered */}
-                                      {testsOrdered.length > 0 && (
-                                        <div className="px-4 pb-2">
-                                          <div className="flex flex-wrap gap-1">
-                                            {testsOrdered.map((t, i) => <Badge key={i} variant="secondary" className="text-xs">{t}</Badge>)}
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      {/* Key Finding Preview */}
-                                      {keyFinding && (
-                                        <div className="mx-4 mb-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md" role="alert" aria-live="assertive">
-                                          <div className="flex items-start gap-2">
-                                            <AlertCircle className="h-4 w-4 text-red-700 dark:text-red-400 mt-0.5 flex-shrink-0" />
-                                            <div className="flex-1 min-w-0">
-                                              <p className="text-xs font-semibold text-red-900 dark:text-red-100 mb-1">KEY FINDING</p>
-                                              <p className="text-sm text-red-900 dark:text-red-100 line-clamp-2">{keyFinding}</p>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      {/* View Full Report Button */}
-                                      <div className="px-4 pb-4">
+                                      {/* View Full Report Button - Compact */}
+                                      <div className="px-3 pb-3">
                                         <Button 
                                           variant="outline" 
                                           size="sm" 
-                                          className="w-full" 
+                                          className="w-full h-7 text-xs font-medium text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20" 
                                           onClick={() => openResult("lab", test)}
                                           data-testid={`view-details-lab-${test.id}`}
                                         >
@@ -4211,85 +4213,52 @@ export default function Treatment() {
                           {/* X-rays */}
                            {(qoTab === "all" || qoTab === "xray") && xrays.filter((x: any) => x.status === "completed").length > 0 && (
                             <div>
-                              <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">X-Ray Examinations</h4>
-                              <div className="space-y-3">
+                              <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300 text-sm">X-Ray Examinations</h4>
+                              <div className="space-y-2">
                                 {xrays.filter((x: any) => x.status === "completed").map((x: any) => (
                                   <div 
                                     key={x.examId || x.orderId} 
-                                    className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+                                    className="bg-white dark:bg-gray-800 rounded-lg border-l-4 border-l-cyan-500 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
                                   >
-                                    {/* Header Row */}
-                                    <div className="p-4 flex justify-between items-start gap-3">
-                                      <div className="flex items-center gap-2 flex-1">
-                                        <Zap className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-                                        <div>
-                                          <p className="font-semibold text-base">{getXrayDisplayName(x)}</p>
-                                          <div className="flex items-center gap-2 mt-1">
-                                            <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                                              <Check className="h-3 w-3 mr-1" />
-                                              Completed
-                                            </Badge>
-                                            {!x.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
-                                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                                              Completed {timeAgo(x.completedAt || x.resultDate || x.updatedAt)}
-                                            </span>
-                                          </div>
+                                    {/* Compact Header Row */}
+                                    <div className="p-3 flex justify-between items-start gap-2">
+                                      <div className="flex items-start gap-2 flex-1 min-w-0">
+                                        <div className="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-900/40 flex items-center justify-center flex-shrink-0">
+                                          <Zap className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
                                         </div>
+                                        <div className="min-w-0">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-bold text-sm text-gray-900 dark:text-gray-100">X-Ray</span>
+                                            <span className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">{x.examId}</span>
+                                          </div>
+                                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                            {getXrayDisplayName(x)}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      {/* Right: Status chips */}
+                                      <div className="flex flex-wrap items-center gap-1 flex-shrink-0">
+                                        <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 text-[10px] px-1.5 py-0">
+                                          <Check className="h-2.5 w-2.5 mr-0.5" />
+                                          Done
+                                        </Badge>
+                                        {!x.isPaid && (
+                                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">UNPAID</Badge>
+                                        )}
+                                        {x.impression && (
+                                          <Badge variant="outline" className="bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300 border-cyan-300 dark:border-cyan-700 text-[10px] px-1.5 py-0">
+                                            Has Report
+                                          </Badge>
+                                        )}
                                       </div>
                                     </div>
 
-                                    {/* Quick Info Row */}
-                                    <div className="px-4 pb-2 grid grid-cols-2 gap-2 text-xs">
-                                      {x.viewDescriptions && (
-                                        <div className="flex items-start gap-1">
-                                          <Camera className="h-3 w-3 text-gray-500 mt-0.5 flex-shrink-0" />
-                                          <span className="text-gray-700 dark:text-gray-300 line-clamp-1">
-                                            <span className="font-semibold">View:</span> {x.viewDescriptions.includes('.') ? x.viewDescriptions.split('.')[0] : x.viewDescriptions}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {x.imageQuality && (
-                                        <div className="flex items-start gap-1">
-                                          <CheckCircle className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
-                                          <span className="text-gray-700 dark:text-gray-300 line-clamp-1">
-                                            <span className="font-semibold">Quality:</span> {x.imageQuality.replace('-', ' - ')}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {/* Findings Preview */}
-                                    {x.findings && (
-                                      <div className="mx-4 mb-3 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
-                                        <div className="flex items-start gap-2">
-                                          <Activity className="h-4 w-4 text-blue-700 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                                          <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-1">KEY FINDING</p>
-                                            <p className="text-sm text-blue-900 dark:text-blue-100 line-clamp-2">{x.findings}</p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Impression Preview (if available) */}
-                                    {x.impression && (
-                                      <div className="mx-4 mb-3 p-3 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-md">
-                                        <div className="flex items-start gap-2">
-                                          <FileText className="h-4 w-4 text-purple-700 dark:text-purple-400 mt-0.5 flex-shrink-0" />
-                                          <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-semibold text-purple-900 dark:text-purple-100 mb-1">IMPRESSION</p>
-                                            <p className="text-sm text-purple-900 dark:text-purple-100 line-clamp-2">{x.impression}</p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* View Full Report Button */}
-                                    <div className="px-4 pb-4">
+                                    {/* View Full Report Button - Compact */}
+                                    <div className="px-3 pb-3">
                                       <Button 
                                         variant="outline" 
                                         size="sm" 
-                                        className="w-full" 
+                                        className="w-full h-7 text-xs font-medium text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800 hover:bg-cyan-50 dark:hover:bg-cyan-900/20" 
                                         onClick={() => openResult("xray", x)}
                                       >
                                         View Full Report →
@@ -4304,65 +4273,52 @@ export default function Treatment() {
                           {/* Ultrasound */}
                           {(qoTab === "all" || qoTab === "ultrasound") && ultrasounds.filter((u: any) => u.status === "completed").length > 0 && (
                             <div>
-                              <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">Ultrasound Examinations</h4>
-                              <div className="space-y-3">
+                              <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300 text-sm">Ultrasound Examinations</h4>
+                              <div className="space-y-2">
                                 {ultrasounds.filter((u: any) => u.status === "completed").map((u: any) => (
                                   <div 
                                     key={u.examId || u.orderId} 
-                                    className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+                                    className="bg-white dark:bg-gray-800 rounded-lg border-l-4 border-l-violet-500 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
                                   >
-                                    {/* Header Row */}
-                                    <div className="p-4 flex justify-between items-start gap-3">
-                                      <div className="flex items-center gap-2 flex-1">
-                                        <Radio className="h-5 w-5 text-teal-600 dark:text-teal-400" />
-                                        <div>
-                                          <p className="font-semibold text-base">{getUltrasoundDisplayName(u)}</p>
-                                          <div className="flex items-center gap-2 mt-1">
-                                            <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                                              <Check className="h-3 w-3 mr-1" />
-                                              Completed
-                                            </Badge>
-                                            {!u.isPaid && (<Badge variant="destructive" className="bg-red-600">UNPAID</Badge>)}
-                                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                                              Completed {timeAgo(u.completedAt || u.resultDate || u.updatedAt)}
-                                            </span>
-                                          </div>
+                                    {/* Compact Header Row */}
+                                    <div className="p-3 flex justify-between items-start gap-2">
+                                      <div className="flex items-start gap-2 flex-1 min-w-0">
+                                        <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center flex-shrink-0">
+                                          <Radio className="h-4 w-4 text-violet-600 dark:text-violet-400" />
                                         </div>
+                                        <div className="min-w-0">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-bold text-sm text-gray-900 dark:text-gray-100">Ultrasound</span>
+                                            <span className="text-xs text-violet-600 dark:text-violet-400 font-medium">{u.examId}</span>
+                                          </div>
+                                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                            {getUltrasoundDisplayName(u)}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      {/* Right: Status chips */}
+                                      <div className="flex flex-wrap items-center gap-1 flex-shrink-0">
+                                        <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 text-[10px] px-1.5 py-0">
+                                          <Check className="h-2.5 w-2.5 mr-0.5" />
+                                          Done
+                                        </Badge>
+                                        {!u.isPaid && (
+                                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">UNPAID</Badge>
+                                        )}
+                                        {u.impression && (
+                                          <Badge variant="outline" className="bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 border-violet-300 dark:border-violet-700 text-[10px] px-1.5 py-0">
+                                            Has Report
+                                          </Badge>
+                                        )}
                                       </div>
                                     </div>
 
-                                    {/* Findings Preview */}
-                                    {u.findings && (
-                                      <div className="mx-4 mb-3 p-3 bg-teal-50 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-800 rounded-md">
-                                        <div className="flex items-start gap-2">
-                                          <Activity className="h-4 w-4 text-teal-700 dark:text-teal-400 mt-0.5 flex-shrink-0" />
-                                          <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-semibold text-teal-900 dark:text-teal-100 mb-1">SONOGRAPHIC FINDINGS</p>
-                                            <p className="text-sm text-teal-900 dark:text-teal-100 line-clamp-2">{u.findings}</p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Impression Preview (if available) */}
-                                    {u.impression && (
-                                      <div className="mx-4 mb-3 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-md">
-                                        <div className="flex items-start gap-2">
-                                          <FileText className="h-4 w-4 text-green-700 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                                          <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-semibold text-green-900 dark:text-green-100 mb-1">KEY FINDING</p>
-                                            <p className="text-sm text-green-900 dark:text-green-100 line-clamp-2 font-medium">{u.impression}</p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* View Full Report Button */}
-                                    <div className="px-4 pb-4">
+                                    {/* View Full Report Button - Compact */}
+                                    <div className="px-3 pb-3">
                                       <Button 
                                         variant="outline" 
                                         size="sm" 
-                                        className="w-full" 
+                                        className="w-full h-7 text-xs font-medium text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800 hover:bg-violet-50 dark:hover:bg-violet-900/20" 
                                         onClick={() => openResult("ultrasound", u)}
                                       >
                                         View Full Report →
@@ -4376,25 +4332,25 @@ export default function Treatment() {
 
                           {/* Empty State */}
                           {qoTab !== 'all' && labTests.filter((t: LabTest) => t.status === "completed").length === 0 && xrays.filter((x: any) => x.status === "completed").length === 0 && ultrasounds.filter((u: any) => u.status === "completed").length === 0 && (
-                             <div className="text-center py-12 px-6 text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50">
-                              <div className="flex flex-col items-center gap-4">
-                                {qoTab === 'lab' && <Beaker className="h-16 w-16 text-blue-300 dark:text-blue-700" />}
-                                {qoTab === 'xray' && <Zap className="h-16 w-16 text-cyan-300 dark:text-cyan-700" />}
-                                {qoTab === 'ultrasound' && <Radio className="h-16 w-16 text-indigo-300 dark:text-indigo-700" />}
+                             <div className="text-center py-8 px-4 text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50">
+                              <div className="flex flex-col items-center gap-3">
+                                {qoTab === 'lab' && <Beaker className="h-12 w-12 text-blue-300 dark:text-blue-700" />}
+                                {qoTab === 'xray' && <Zap className="h-12 w-12 text-cyan-300 dark:text-cyan-700" />}
+                                {qoTab === 'ultrasound' && <Radio className="h-12 w-12 text-violet-300 dark:text-violet-700" />}
                                 <div>
-                                  <p className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-1">No {qoTab} results yet</p>
-                                  <p className="text-sm text-gray-500 dark:text-gray-400">Order tests using the form above</p>
+                                  <p className="text-base font-medium text-gray-700 dark:text-gray-300 mb-1">No {qoTab} results yet</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Order tests using the form above</p>
                                 </div>
                               </div>
                             </div>
                           )}
                            {qoTab === 'all' && labTests.filter((t: LabTest) => t.status === "completed").length === 0 && xrays.filter((x: any) => x.status === "completed").length === 0 && ultrasounds.filter((u: any) => u.status === "completed").length === 0 && (
-                            <div className="text-center py-12 px-6 text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50">
-                              <div className="flex flex-col items-center gap-4">
-                                <FileText className="h-16 w-16 text-gray-300 dark:text-gray-700" />
+                            <div className="text-center py-8 px-4 text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50">
+                              <div className="flex flex-col items-center gap-3">
+                                <FileText className="h-12 w-12 text-gray-300 dark:text-gray-700" />
                                 <div>
-                                  <p className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-1">No results yet</p>
-                                  <p className="text-sm text-gray-500 dark:text-gray-400">Order diagnostic tests to see results here</p>
+                                  <p className="text-base font-medium text-gray-700 dark:text-gray-300 mb-1">No results yet</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Order diagnostic tests to see results here</p>
                                 </div>
                               </div>
                             </div>
