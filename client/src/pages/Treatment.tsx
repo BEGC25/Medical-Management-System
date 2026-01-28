@@ -1795,9 +1795,11 @@ export default function Treatment() {
     mutationFn: async (meds: typeof medications) => {
       if (!selectedPatient || !currentEncounter) throw new Error("No patient or encounter");
       
-      // No longer require pharmacy service - use drug inventory pricing instead
-      const promises = meds.map((med) =>
-        apiRequest("POST", "/api/pharmacy-orders", {
+      // Submit orders sequentially to avoid race conditions in pharmacy order ID generation
+      // and to provide accurate error reporting for individual orders
+      const results = [];
+      for (const med of meds) {
+        const response = await apiRequest("POST", "/api/pharmacy-orders", {
           patientId: selectedPatient.patientId,
           encounterId: currentEncounter.encounterId,
           treatmentId: savedTreatment?.treatmentId,
@@ -1809,9 +1811,10 @@ export default function Treatment() {
           instructions: med.instructions,
           route: med.route,
           duration: med.duration,
-        })
-      );
-      return Promise.all(promises);
+        });
+        results.push(response);
+      }
+      return results;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pharmacy-orders"] });
