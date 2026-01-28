@@ -420,10 +420,6 @@ export default function ResultDrawer(props: {
                             );
                           })}
                         </div>
-                        
-                        <div className="mt-2 text-xs text-gray-400 dark:text-gray-500 italic">
-                          Reference ranges may vary by age, gender, and laboratory standards
-                        </div>
                       </div>
                     );
                   })}
