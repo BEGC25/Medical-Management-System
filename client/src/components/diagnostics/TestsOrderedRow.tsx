@@ -5,6 +5,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { shortenViewDescription, formatExamLabel } from "./diagnostic-utils";
 
 type Modality = "lab" | "xray" | "ultrasound";
 
@@ -19,85 +20,6 @@ interface TestsOrderedRowProps {
   scanRegion?: string | null;
   // How many tests to show before "+N more" (default: 3)
   maxVisible?: number;
-}
-
-/**
- * Shorten verbose view descriptions to compact format
- * "AP and lateral view obtained" → "AP + Lateral"
- * "PA and lateral views" → "PA + Lateral"
- * 
- * Views are displayed as separate chips with "Views:" label inline
- */
-function shortenViewDescription(views: string): string {
-  const lowerViews = views.toLowerCase();
-  
-  // Check for common patterns and convert to compact format
-  if (lowerViews.includes("ap") && lowerViews.includes("lateral")) {
-    return "AP + Lateral";
-  }
-  if (lowerViews.includes("pa") && lowerViews.includes("lateral")) {
-    return "PA + Lateral";
-  }
-  if (lowerViews.includes("oblique") && lowerViews.includes("lateral")) {
-    return "Oblique + Lateral";
-  }
-  if (lowerViews.includes("anterior") && lowerViews.includes("posterior")) {
-    return "AP";
-  }
-  
-  // If the string is long (sentence-like), try to extract key view terms
-  if (views.length > 30) {
-    const viewTerms: string[] = [];
-    if (lowerViews.includes("ap")) viewTerms.push("AP");
-    if (lowerViews.includes("pa")) viewTerms.push("PA");
-    if (lowerViews.includes("lateral")) viewTerms.push("Lateral");
-    if (lowerViews.includes("oblique")) viewTerms.push("Oblique");
-    if (lowerViews.includes("axial")) viewTerms.push("Axial");
-    if (lowerViews.includes("lordotic")) viewTerms.push("Lordotic");
-    
-    if (viewTerms.length > 0) {
-      return viewTerms.join(" + ");
-    }
-  }
-  
-  // Return as-is if can't shorten
-  return views;
-}
-
-/**
- * Format exam type and body part as single combined label
- * For X-ray: "chest" + "AP & Lateral" → "Chest — AP + Lateral"
- * For Ultrasound: "abdominal" + "Complete Abdominal Scan" → "Abdominal — Complete Scan"
- */
-function formatExamLabel(examType?: string | null, bodyPart?: string | null, scanRegion?: string | null, views?: string | null): string {
-  // Capitalize first letter
-  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-  
-  let parts: string[] = [];
-  
-  if (examType) {
-    parts.push(capitalize(examType.trim()));
-  }
-  
-  // For X-ray: combine body part and views
-  if (bodyPart && bodyPart.toLowerCase() !== examType?.toLowerCase()) {
-    parts.push(capitalize(bodyPart.trim()));
-  }
-  
-  // For Ultrasound: add scan region if different from exam type
-  if (scanRegion) {
-    // Don't repeat if scan region is similar to exam type
-    const scanLower = scanRegion.toLowerCase();
-    const examLower = examType?.toLowerCase() || "";
-    if (!scanLower.includes(examLower) && !examLower.includes(scanLower.split(" ")[0])) {
-      parts.push(scanRegion.trim());
-    } else if (scanRegion !== examType) {
-      // If related but different, use the more specific one
-      parts = [scanRegion.trim()];
-    }
-  }
-  
-  return parts.join(" — ");
 }
 
 /**
