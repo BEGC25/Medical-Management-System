@@ -46,6 +46,7 @@ import {
 import { parseDateFilter } from "./utils/date";
 import { parseClinicRangeParams, rangeToISOStrings, rangeToDayKeys } from "./utils/clinic-range";
 import { recalculateLabTestPrices } from "./utils/labTestPricing";
+import { serializeBigInt } from "./utils/serialize";
 
 // Extend express-session types to include our user
 declare module "express-session" {
@@ -2429,7 +2430,7 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
 router.get("/api/pharmacy-orders", async (_req, res) => {
   try {
     const pharmacyOrders = await storage.getPharmacyOrdersWithPatients();
-    res.json(pharmacyOrders);
+    res.json(serializeBigInt(pharmacyOrders));
   } catch (error) {
     console.error("Error in pharmacy orders route:", error);
     res
@@ -2446,7 +2447,7 @@ router.get("/api/pharmacy-orders/:patientId", async (req, res) => {
     const pharmacyOrders = await storage.getPharmacyOrdersByPatient(
       req.params.patientId
     );
-    res.json(pharmacyOrders);
+    res.json(serializeBigInt(pharmacyOrders));
   } catch (error) {
     console.error("Error in patient pharmacy orders route:", error);
     res.status(500).json({ error: "Failed to fetch patient pharmacy orders" });
@@ -2457,15 +2458,27 @@ router.post("/api/pharmacy-orders", async (req, res) => {
   try {
     const data = insertPharmacyOrderSchema.parse(req.body);
     const pharmacyOrder = await storage.createPharmacyOrder(data);
-    res.status(201).json(pharmacyOrder);
+    // Serialize BigInt values to avoid JSON serialization errors with PostgreSQL
+    res.status(201).json(serializeBigInt(pharmacyOrder));
   } catch (error) {
+    // Log full error details for debugging
     console.error("Error creating pharmacy order:", error);
+    console.error("Error type:", error instanceof Error ? error.constructor.name : typeof error);
+    console.error("Error message:", error instanceof Error ? error.message : String(error));
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid pharmacy order data", details: error.errors });
     }
-    res.status(500).json({ error: "Failed to create pharmacy order" });
+    
+    // Include error details in response for better debugging
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ 
+      error: "Failed to create pharmacy order",
+      details: errorMessage
+    });
   }
 });
 
@@ -2476,10 +2489,14 @@ router.patch("/api/pharmacy-orders/:orderId", async (req, res) => {
       req.params.orderId,
       updates
     );
-    res.json(pharmacyOrder);
+    res.json(serializeBigInt(pharmacyOrder));
   } catch (error) {
     console.error("Error updating pharmacy order:", error);
-    res.status(500).json({ error: "Failed to update pharmacy order" });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ 
+      error: "Failed to update pharmacy order",
+      details: errorMessage
+    });
   }
 });
 
@@ -2488,10 +2505,14 @@ router.patch("/api/pharmacy-orders/:orderId/dispense", async (req: any, res) => 
     const pharmacyOrder = await storage.dispensePharmacyOrder(
       req.params.orderId
     );
-    res.json(pharmacyOrder);
+    res.json(serializeBigInt(pharmacyOrder));
   } catch (error) {
     console.error("Error dispensing pharmacy order:", error);
-    res.status(500).json({ error: "Failed to dispense pharmacy order" });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ 
+      error: "Failed to dispense pharmacy order",
+      details: errorMessage
+    });
   }
 });
 
