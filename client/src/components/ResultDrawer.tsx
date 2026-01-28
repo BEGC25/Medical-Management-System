@@ -411,7 +411,7 @@ export default function ResultDrawer(props: {
                                     {value} {unit}
                                   </span>
                                   {refRange && (
-                                    <span className="text-[10px] text-gray-400 dark:text-gray-500 hidden sm:inline">
+                                    <span className="text-xs text-gray-400 dark:text-gray-500 hidden sm:inline">
                                       ({refRange})
                                     </span>
                                   )}
@@ -421,8 +421,8 @@ export default function ResultDrawer(props: {
                           })}
                         </div>
                         
-                        <div className="mt-2 text-[10px] text-gray-400 dark:text-gray-500 italic">
-                          Reference ranges may vary by age, gender, and laboratory
+                        <div className="mt-2 text-xs text-gray-400 dark:text-gray-500 italic">
+                          Reference ranges may vary by age, gender, and laboratory standards
                         </div>
                       </div>
                     );

@@ -4142,15 +4142,7 @@ export default function Treatment() {
                                     return `Laboratory Tests (${count})`;
                                   };
 
-                                  // Count abnormal results for badge
-                                  const abnormalCount = Object.entries(parsedResults).reduce((count, [testName, testResults]) => {
-                                    // Check if this test panel has any abnormal values
-                                    const hasAbnormal = Object.values(testResults).some(value => {
-                                      // Simple heuristic: values marked with ↑ or ↓ or outside typical ranges
-                                      return typeof value === 'string' && (value.includes('↑') || value.includes('↓') || value.includes('H') || value.includes('L'));
-                                    });
-                                    return count + (hasAbnormal ? 1 : 0);
-                                  }, 0);
+                                  // Count abnormal results for badge (keyFinding already indicates abnormality)
                                   
                                   return (
                                     <div 
@@ -4175,15 +4167,15 @@ export default function Treatment() {
                                         </div>
                                         {/* Right: Status chips + Abnormal badge */}
                                         <div className="flex flex-wrap items-center gap-1 flex-shrink-0">
-                                          <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 text-[10px] px-1.5 py-0">
+                                          <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 text-xs px-1.5 py-0">
                                             <Check className="h-2.5 w-2.5 mr-0.5" />
                                             Done
                                           </Badge>
                                           {!test.isPaid && (
-                                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">UNPAID</Badge>
+                                            <Badge variant="destructive" className="text-xs px-1.5 py-0">UNPAID</Badge>
                                           )}
                                           {keyFinding && (
-                                            <Badge variant="outline" className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-red-300 dark:border-red-700 text-[10px] px-1.5 py-0 flex items-center gap-0.5">
+                                            <Badge variant="outline" className="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-red-300 dark:border-red-700 text-xs px-1.5 py-0 flex items-center gap-0.5">
                                               <AlertCircle className="h-2.5 w-2.5" />
                                               Abnormal
                                             </Badge>
@@ -4238,15 +4230,15 @@ export default function Treatment() {
                                       </div>
                                       {/* Right: Status chips */}
                                       <div className="flex flex-wrap items-center gap-1 flex-shrink-0">
-                                        <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 text-[10px] px-1.5 py-0">
+                                        <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 text-xs px-1.5 py-0">
                                           <Check className="h-2.5 w-2.5 mr-0.5" />
                                           Done
                                         </Badge>
                                         {!x.isPaid && (
-                                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">UNPAID</Badge>
+                                          <Badge variant="destructive" className="text-xs px-1.5 py-0">UNPAID</Badge>
                                         )}
                                         {x.impression && (
-                                          <Badge variant="outline" className="bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300 border-cyan-300 dark:border-cyan-700 text-[10px] px-1.5 py-0">
+                                          <Badge variant="outline" className="bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300 border-cyan-300 dark:border-cyan-700 text-xs px-1.5 py-0">
                                             Has Report
                                           </Badge>
                                         )}
@@ -4298,15 +4290,15 @@ export default function Treatment() {
                                       </div>
                                       {/* Right: Status chips */}
                                       <div className="flex flex-wrap items-center gap-1 flex-shrink-0">
-                                        <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 text-[10px] px-1.5 py-0">
+                                        <Badge variant="default" className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 text-xs px-1.5 py-0">
                                           <Check className="h-2.5 w-2.5 mr-0.5" />
                                           Done
                                         </Badge>
                                         {!u.isPaid && (
-                                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">UNPAID</Badge>
+                                          <Badge variant="destructive" className="text-xs px-1.5 py-0">UNPAID</Badge>
                                         )}
                                         {u.impression && (
-                                          <Badge variant="outline" className="bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 border-violet-300 dark:border-violet-700 text-[10px] px-1.5 py-0">
+                                          <Badge variant="outline" className="bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 border-violet-300 dark:border-violet-700 text-xs px-1.5 py-0">
                                             Has Report
                                           </Badge>
                                         )}
@@ -4334,9 +4326,9 @@ export default function Treatment() {
                           {qoTab !== 'all' && labTests.filter((t: LabTest) => t.status === "completed").length === 0 && xrays.filter((x: any) => x.status === "completed").length === 0 && ultrasounds.filter((u: any) => u.status === "completed").length === 0 && (
                              <div className="text-center py-8 px-4 text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50">
                               <div className="flex flex-col items-center gap-3">
-                                {qoTab === 'lab' && <Beaker className="h-12 w-12 text-blue-300 dark:text-blue-700" />}
-                                {qoTab === 'xray' && <Zap className="h-12 w-12 text-cyan-300 dark:text-cyan-700" />}
-                                {qoTab === 'ultrasound' && <Radio className="h-12 w-12 text-violet-300 dark:text-violet-700" />}
+                                {qoTab === 'lab' && <Beaker className="h-12 w-12 text-blue-500 dark:text-blue-600" />}
+                                {qoTab === 'xray' && <Zap className="h-12 w-12 text-cyan-500 dark:text-cyan-600" />}
+                                {qoTab === 'ultrasound' && <Radio className="h-12 w-12 text-violet-500 dark:text-violet-600" />}
                                 <div>
                                   <p className="text-base font-medium text-gray-700 dark:text-gray-300 mb-1">No {qoTab} results yet</p>
                                   <p className="text-xs text-gray-500 dark:text-gray-400">Order tests using the form above</p>
@@ -4347,7 +4339,7 @@ export default function Treatment() {
                            {qoTab === 'all' && labTests.filter((t: LabTest) => t.status === "completed").length === 0 && xrays.filter((x: any) => x.status === "completed").length === 0 && ultrasounds.filter((u: any) => u.status === "completed").length === 0 && (
                             <div className="text-center py-8 px-4 text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50">
                               <div className="flex flex-col items-center gap-3">
-                                <FileText className="h-12 w-12 text-gray-300 dark:text-gray-700" />
+                                <FileText className="h-12 w-12 text-gray-400 dark:text-gray-600" />
                                 <div>
                                   <p className="text-base font-medium text-gray-700 dark:text-gray-300 mb-1">No results yet</p>
                                   <p className="text-xs text-gray-500 dark:text-gray-400">Order diagnostic tests to see results here</p>
@@ -5391,7 +5383,7 @@ export default function Treatment() {
                                   </div>
                                   <Badge 
                                     variant="outline" 
-                                    className={`text-[10px] flex-shrink-0 ${
+                                    className={`text-xs flex-shrink-0 ${
                                       med.status === 'pending' 
                                         ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700'
                                         : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700'
