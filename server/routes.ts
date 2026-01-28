@@ -1771,75 +1771,59 @@ router.post("/api/payments", async (req: any, res) => {
       // Update payment status for each order type
       for (const item of items) {
         if (item.relatedId && item.relatedType) {
-          try {
-            if (item.relatedType === "lab_test") {
-              await storage.updateLabTest(item.relatedId, { paymentStatus: "paid" });
-            } else if (item.relatedType === "lab_test_item") {
-              // For individual lab test items, check if ALL tests from parent order are paid
-              const parts = item.relatedId.split("-");
-              const parentId = parts.slice(0, parts.length - 1).join("-");
+          if (item.relatedType === "lab_test") {
+            await storage.updateLabTest(item.relatedId, { paymentStatus: "paid" });
+          } else if (item.relatedType === "lab_test_item") {
+            // For individual lab test items, check if ALL tests from parent order are paid
+            const parts = item.relatedId.split("-");
+            const parentId = parts.slice(0, parts.length - 1).join("-");
+            
+            // Get the parent lab test to see total number of tests
+            const allLabTests = await storage.getLabTests();
+            const labTest = allLabTests.find(t => t.testId === parentId);
+            if (labTest) {
+              const totalTests = JSON.parse(labTest.tests).length;
               
-              // Get the parent lab test to see total number of tests
-              const allLabTests = await storage.getLabTests();
-              const labTest = allLabTests.find(t => t.testId === parentId);
-              if (labTest) {
-                const totalTests = JSON.parse(labTest.tests).length;
-                
-                // Check how many tests have been paid (current + previous payments)
-                // Get all payment_items for this lab order by querying all payments
-                const allPayments = await storage.getPayments();
-                const paidTestIndices = new Set<number>();
-                
-                for (const payment of allPayments) {
-                  const paymentItemsList = await storage.getPaymentItems(payment.paymentId);
-                  paymentItemsList.forEach(pi => {
-                    if (pi.relatedType === "lab_test_item" && pi.relatedId) {
-                      const piParts = pi.relatedId.split("-");
-                      const piParentId = piParts.slice(0, piParts.length - 1).join("-");
-                      if (piParentId === parentId) {
-                        const testIndex = parseInt(piParts[piParts.length - 1]);
-                        paidTestIndices.add(testIndex);
-                      }
+              // Check how many tests have been paid (current + previous payments)
+              // Get all payment_items for this lab order by querying all payments
+              const allPayments = await storage.getPayments();
+              const paidTestIndices = new Set<number>();
+              
+              for (const payment of allPayments) {
+                const paymentItemsList = await storage.getPaymentItems(payment.paymentId);
+                paymentItemsList.forEach(pi => {
+                  if (pi.relatedType === "lab_test_item" && pi.relatedId) {
+                    const piParts = pi.relatedId.split("-");
+                    const piParentId = piParts.slice(0, piParts.length - 1).join("-");
+                    if (piParentId === parentId) {
+                      const testIndex = parseInt(piParts[piParts.length - 1]);
+                      paidTestIndices.add(testIndex);
                     }
-                  });
-                }
-                
-                // Add current transaction items
-                const currentItems = labTestItemsByParent.get(parentId);
-                if (currentItems) {
-                  currentItems.forEach(idx => paidTestIndices.add(idx));
-                }
-                
-                // Only mark parent as paid if ALL tests are now paid
-                if (paidTestIndices.size === totalTests) {
-                  await storage.updateLabTest(parentId, { paymentStatus: "paid" });
-                }
+                  }
+                });
               }
-            } else if (item.relatedType === "xray_exam") {
-              if (!item.relatedId) {
-                console.error("Missing relatedId for xray_exam payment item:", item);
-                throw new Error("X-ray exam ID is missing from payment item");
+              
+              // Add current transaction items
+              const currentItems = labTestItemsByParent.get(parentId);
+              if (currentItems) {
+                currentItems.forEach(idx => paidTestIndices.add(idx));
               }
-              await storage.updateXrayExam(item.relatedId, { paymentStatus: "paid" });
-            } else if (item.relatedType === "ultrasound_exam") {
-              if (!item.relatedId) {
-                console.error("Missing relatedId for ultrasound_exam payment item:", item);
-                throw new Error("Ultrasound exam ID is missing from payment item");
+              
+              // Only mark parent as paid if ALL tests are now paid
+              if (paidTestIndices.size === totalTests) {
+                await storage.updateLabTest(parentId, { paymentStatus: "paid" });
               }
-              await storage.updateUltrasoundExam(item.relatedId, {
-                paymentStatus: "paid",
-              });
-            } else if (item.relatedType === "pharmacy_order") {
-              if (!item.relatedId) {
-                console.error("Missing relatedId for pharmacy_order payment item:", item);
-                throw new Error("Pharmacy order ID is missing from payment item");
-              }
-              await storage.updatePharmacyOrder(item.relatedId, {
-                paymentStatus: "paid",
-              });
             }
-          } catch (error) {
-            console.error("Error updating payment status:", error);
+          } else if (item.relatedType === "xray_exam") {
+            await storage.updateXrayExam(item.relatedId, { paymentStatus: "paid" });
+          } else if (item.relatedType === "ultrasound_exam") {
+            await storage.updateUltrasoundExam(item.relatedId, {
+              paymentStatus: "paid",
+            });
+          } else if (item.relatedType === "pharmacy_order") {
+            await storage.updatePharmacyOrder(item.relatedId, {
+              paymentStatus: "paid",
+            });
           }
         }
       }
