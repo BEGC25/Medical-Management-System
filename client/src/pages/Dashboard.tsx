@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 import { formatDistanceToNow } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
+import { formatClinicDay } from "@/lib/date-utils";
 
 const QUICK_ACTION_THEMES = {
   blue: {
@@ -1015,10 +1016,7 @@ export default function Dashboard() {
                             </span>
                             <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center">
                               <Clock className="w-3 h-3 mr-1" />
-                              {new Date(patient.lastVisit).toLocaleDateString(
-                                "en-US",
-                                { month: "short", day: "numeric" }
-                              )}
+                              {formatClinicDay(patient.lastVisit, 'MMM d')}
                             </p>
                           </>
                         )}

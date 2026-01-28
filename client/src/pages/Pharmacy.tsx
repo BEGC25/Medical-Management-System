@@ -33,34 +33,7 @@ import { DrugInfoModal } from "@/components/pharmacy/DrugInfoModal";
 import { DrugInfoTooltip } from "@/components/pharmacy/DrugInfoTooltip";
 import { QuickDrugTooltip } from "@/components/pharmacy/QuickDrugTooltip";
 import { PatientInstructionSheet } from "@/components/pharmacy/PatientInstructionSheet";
-
-// Helper function to format dates consistently
-function formatDate(dateString: string): string {
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      return dateString; // Return original string if invalid
-    }
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  } catch {
-    return dateString;
-  }
-}
-
-// Helper function to format date with time
-function formatDateTime(dateString: string): string {
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      return dateString; // Return original string if invalid
-    }
-    const dateFormatted = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const timeFormatted = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-    return `${dateFormatted} at ${timeFormatted}`;
-  } catch {
-    return dateString;
-  }
-}
+import { formatClinicDay, formatClinicDateTime, getClinicDayKey } from "@/lib/date-utils";
 
 // Helper to get route icon from drug form
 function getRouteIcon(form: string): string {
@@ -622,7 +595,7 @@ export default function Pharmacy() {
                                   </div>
                                 )}
                                 <div className="text-xs text-gray-500 dark:text-gray-400 pt-2">
-                                  Prescribed: {formatDate(order.createdAt)}
+                                  Prescribed: {formatClinicDay(order.createdAt, 'MMM d, yyyy')}
                                 </div>
                               </div>
                             )}
@@ -804,12 +777,12 @@ export default function Pharmacy() {
                             <div className="flex gap-4 text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-blue-200 dark:border-blue-800">
                               <div>
                                 <span>Prescribed:</span>
-                                <span className="ml-1">{formatDate(order.createdAt)}</span>
+                                <span className="ml-1">{formatClinicDay(order.createdAt, 'MMM d, yyyy')}</span>
                               </div>
                               {order.dispensedAt && (
                                 <div className="font-semibold text-blue-600 dark:text-blue-400">
                                   <span>Dispensed:</span>
-                                  <span className="ml-1">{formatDateTime(order.dispensedAt)}</span>
+                                  <span className="ml-1">{formatClinicDateTime(order.dispensedAt, 'MMM d, yyyy hh:mm a')}</span>
                                 </div>
                               )}
                             </div>
@@ -1016,7 +989,7 @@ export default function Pharmacy() {
                               </div>
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400 pt-2">
-                              Prescribed: {formatDate(order.createdAt)}
+                              Prescribed: {formatClinicDay(order.createdAt, 'MMM d, yyyy')}
                             </div>
                           </div>
                         </div>
@@ -1211,7 +1184,7 @@ export default function Pharmacy() {
                           quantity: selectedOrder.quantity,
                           instructions: selectedOrder.instructions || 'Follow prescription',
                         }}
-                        date={new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                        date={formatClinicDay(getClinicDayKey(), 'MMMM d, yyyy')}
                       />
                     </div>
                   );
@@ -1249,7 +1222,7 @@ export default function Pharmacy() {
                             <Package className="w-4 h-4 text-blue-600" />
                             <span className="font-medium">Lot: {batch.lotNumber}</span>
                             <span className="text-xs text-gray-500">
-                              | Exp: {expiryDate.toLocaleDateString()}
+                              | Exp: {formatClinicDay(expiryDate.toISOString())}
                             </span>
                             <span className="text-xs text-gray-500">
                               | Stock: {batch.quantityOnHand}
@@ -1297,7 +1270,7 @@ export default function Pharmacy() {
                         <div className="flex justify-between bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
                           <span className="text-gray-600 dark:text-gray-400">Expiry Date:</span>
                           <span className={`font-semibold ${isExpiringSoon ? 'text-amber-700 dark:text-amber-400' : 'text-gray-900 dark:text-white'}`}>
-                            {expiryDate.toLocaleDateString()} {isExpiringSoon && `(${daysToExpiry} days)`}
+                            {formatClinicDay(expiryDate.toISOString())} {isExpiringSoon && `(${daysToExpiry} days)`}
                           </span>
                         </div>
                         <div className="flex justify-between bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">

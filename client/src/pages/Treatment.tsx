@@ -87,7 +87,7 @@ import {
 } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, getClinicDayKey, formatClinicDayKey, formatClinicDateTime } from "@/lib/date-utils";
+import { getDateRangeForAPI, getClinicRangeKeys, formatDateInZone, getZonedNow, getClinicDayKey, formatClinicDayKey, formatClinicDateTime, formatClinicDay } from "@/lib/date-utils";
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, getUltrasoundDisplayName, formatDepartmentName, getVisitStatusLabel, type XrayDisplayData, type UltrasoundDisplayData } from '@/lib/display-utils';
 import { extractLabKeyFinding } from '@/lib/medical-criteria';
@@ -5157,7 +5157,7 @@ export default function Treatment() {
                                      {tx.followUpDate && (
                                        <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-medium">
                                          <span>⏰</span>
-                                         <span>Follow-up: {new Date(tx.followUpDate).toLocaleDateString()}</span>
+                                         <span>Follow-up: {formatClinicDay(tx.followUpDate)}</span>
                                        </span>
                                      )}
                                    </div>

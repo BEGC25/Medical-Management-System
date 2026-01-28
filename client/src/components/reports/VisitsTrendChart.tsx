@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { formatClinicDay } from "@/lib/date-utils";
 
 interface VisitsTrendChartProps {
   data?: Array<{ date: string; visits: number }>;
@@ -105,11 +106,7 @@ export function VisitsTrendChart({ data = [], isLoading }: VisitsTrendChartProps
 // Format ISO date string (YYYY-MM-DD) to display format (e.g., "Jan 10")
 function formatDate(dateStr: string): string {
   try {
-    const date = new Date(dateStr + 'T00:00:00');
-    if (isNaN(date.getTime())) {
-      return dateStr;
-    }
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return formatClinicDay(dateStr, 'MMM d');
   } catch {
     return dateStr;
   }

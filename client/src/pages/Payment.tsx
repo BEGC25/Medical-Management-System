@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDepartmentName } from "@/lib/display-utils";
+import { formatClinicDay, formatClinicDateTime, getClinicDayKey } from "@/lib/date-utils";
 import { Search, DollarSign, Receipt, AlertCircle, Users, X, CheckCircle, Plus, Trash2, Eye, ChevronDown, ChevronUp, TrendingUp, Wallet, CreditCard, FlaskConical, RefreshCw } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -262,13 +263,9 @@ export default function Payment() {
     return getMedicalIcon(type, { className: `${colors.icon} ${colors.iconDark}`, size: 20 });
   }
 
-  // Format date nicely
+  // Format date nicely using clinic timezone
   function formatDateNice(dateStr: string): string {
-    const date = new Date(dateStr);
-    const day = date.getDate();
-    const month = date.toLocaleDateString('en-US', { month: 'short' });
-    const year = date.getFullYear();
-    return `${day} ${month} ${year}`;
+    return formatClinicDay(dateStr, 'd MMM yyyy');
   }
 
   // Search patients with better error handling
@@ -1262,7 +1259,7 @@ export default function Payment() {
                               <span className="text-gray-400 text-xs">•</span>
                               <Badge variant="outline" className="text-xs flex-shrink-0">{payment.patientId}</Badge>
                               <span className="text-gray-400 text-xs">•</span>
-                              <span className="text-xs text-gray-500">{new Date(payment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • {new Date(payment.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                              <span className="text-xs text-gray-500">{formatClinicDateTime(payment.createdAt, 'MMM d, yyyy')} • {formatClinicDateTime(payment.createdAt, 'hh:mm a')}</span>
                             </div>
                             
                             {/* Row 2: Service breakdown and payment method */}
@@ -1629,7 +1626,7 @@ export default function Payment() {
                           <div className="border-b pb-2 mb-2">
                             <p><strong>Patient:</strong> {selectedPatient?.firstName} {selectedPatient?.lastName}</p>
                             <p><strong>ID:</strong> {selectedPatient?.patientId}</p>
-                            <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
+                            <p><strong>Date:</strong> {formatClinicDay(getClinicDayKey())}</p>
                           </div>
                           <div className="border-b pb-2 mb-2">
                             <p className="font-semibold mb-1">Services:</p>
@@ -1792,12 +1789,12 @@ export default function Payment() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Payment Date</p>
-                    <p className="font-semibold">{new Date(paymentDetails.paymentDate).toLocaleDateString()}</p>
+                    <p className="font-semibold">{formatClinicDay(paymentDetails.paymentDate)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Payment Time</p>
                     <p className="font-semibold">
-                      {new Date(paymentDetails.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                      {formatClinicDateTime(paymentDetails.createdAt, 'hh:mm a')}
                     </p>
                   </div>
                 </div>

@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button"
 import { format, subDays } from "date-fns"
 import { cn } from "@/lib/utils"
-import { getClinicDayKey, getClinicNow } from "@/lib/date-utils"
+import { getClinicDayKey, getClinicNow, formatClinicDay } from "@/lib/date-utils"
 
 type ApiRow = {
   department: string
@@ -257,7 +257,7 @@ export default function ReportsDailyCash() {
                 <span className="font-mono">DCR-{date.replace(/-/g, '')}</span>
                 <span className="hidden sm:inline text-gray-300 dark:text-gray-600">•</span>
                 <span className="hidden sm:inline">
-                  {ymdToLocalDate(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {formatClinicDay(date, 'MMM d, yyyy')}
                 </span>
                 <span className={cn(
                   "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",

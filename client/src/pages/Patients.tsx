@@ -97,7 +97,7 @@ import {
 import { ROLES } from "@shared/auth-roles";
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import { getDateRangeForAPI, formatClinicDay, getClinicDayKey } from "@/lib/date-utils";
+import { getDateRangeForAPI, formatClinicDay, getClinicDayKey, formatClinicDateTime } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 
 function money(n?: number) {
@@ -1020,7 +1020,7 @@ export default function Patients() {
             </p>
             {/* Last updated - inline on larger screens */}
             <span className="hidden lg:inline text-xs text-gray-500 dark:text-gray-500 ml-2">
-              • Updated: {lastRefresh.toLocaleTimeString()}
+              • Updated: {formatClinicDateTime(lastRefresh.toISOString(), 'hh:mm a')}
             </span>
           </div>
           <div className="flex gap-2 flex-shrink-0">
@@ -1228,7 +1228,7 @@ export default function Patients() {
             <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
             <span className="text-gray-600 dark:text-gray-400">Updated:</span>
             <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
-              {lastRefresh.toLocaleTimeString()}
+              {formatClinicDateTime(lastRefresh.toISOString(), 'hh:mm a')}
             </span>
           </div>
         </div>

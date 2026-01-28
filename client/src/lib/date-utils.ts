@@ -214,11 +214,8 @@ export function formatClinicDateTime(iso: string | undefined | null, formatStr: 
 export function formatLongDate(date: string | number | Date | null | undefined): string {
   if (!date) return '';
   try {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    const dateObj = new Date(date);
+    return formatInTimeZone(dateObj, CLINIC_TZ, 'MMMM d, yyyy');
   } catch {
     return '';
   }

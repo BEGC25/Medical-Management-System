@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FileText, Printer } from "lucide-react";
 import clinicLogo from "@assets/Logo-Clinic_1762148237143.jpeg";
+import { formatLongDate } from "@/lib/date-utils";
 
 type Patient = any;
 type Encounter = any;
@@ -23,19 +24,6 @@ interface DischargeSummaryProps {
 }
 
 // Helper functions for formatting
-function formatLongDate(date: string | number | Date | null | undefined): string {
-  if (!date) return '';
-  try {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  } catch {
-    return String(date);
-  }
-}
-
 function capitalizeFirstLetter(str: string | null | undefined): string {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1);
