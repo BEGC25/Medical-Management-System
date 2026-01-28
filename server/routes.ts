@@ -1697,6 +1697,23 @@ router.post("/api/payments", async (req: any, res) => {
       // Track which consultation order lines have been used
       const usedOrderLineIds = new Set<number>();
 
+      // Pre-fetch pharmacy-related data only if there are pharmacy items (performance optimization)
+      const hasPharmacyItems = items.some((item: any) => item.relatedType === "pharmacy_order");
+      let pharmacyOrdersMap: Map<string, any> | null = null;
+      let allServicesForPharmacy: any[] | null = null;
+      let drugMap: Map<number, any> | null = null;
+      
+      if (hasPharmacyItems) {
+        const [allPharmacyOrders, allServices, allDrugs] = await Promise.all([
+          storage.getPharmacyOrders(),
+          storage.getServices(),
+          storage.getDrugs(true)
+        ]);
+        pharmacyOrdersMap = new Map(allPharmacyOrders.map((o: any) => [o.orderId, o]));
+        allServicesForPharmacy = allServices;
+        drugMap = new Map(allDrugs.map((d: any) => [d.id, d]));
+      }
+
       for (const item of items) {
         const quantity = item.quantity || 1;
         
@@ -1712,30 +1729,23 @@ router.post("/api/payments", async (req: any, res) => {
             throw new Error("Missing relatedId for pharmacy_order payment item");
           }
           
-          // Load the pharmacy order to get authoritative pricing from database
-          const allPharmacyOrders = await storage.getPharmacyOrders();
-          const pharmacyOrder = allPharmacyOrders.find((o: any) => o.orderId === item.relatedId);
+          // Look up the pharmacy order from pre-fetched data
+          const pharmacyOrder = pharmacyOrdersMap!.get(item.relatedId);
           
           if (!pharmacyOrder) {
             throw new Error(`Pharmacy order ${item.relatedId} not found`);
           }
           
-          // Calculate the unit price from the drug catalog (don't trust client price)
-          const allServices = await storage.getServices();
-          const allDrugs = await storage.getDrugs(true);
-          const drugMap = new Map(allDrugs.map((d: any) => [d.id, d]));
-          
+          // Calculate the authoritative unit price from the drug catalog (NEVER trust client price)
           const calculatedUnitPrice = await calculatePharmacyOrderPriceHelper(
             pharmacyOrder,
-            allServices,
-            drugMap,
+            allServicesForPharmacy!,
+            drugMap!,
             storage
           );
           
-          // Use calculated price if client price seems wrong (0 or missing)
-          if (!unitPrice || unitPrice <= 0) {
-            unitPrice = calculatedUnitPrice;
-          }
+          // SECURITY: Always use calculated price for pharmacy orders - don't trust client-submitted price
+          unitPrice = calculatedUnitPrice;
           
           // serviceId can be null for pharmacy orders - they get pricing from drug catalog
           serviceId = pharmacyOrder.serviceId || null;
