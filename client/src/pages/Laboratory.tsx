@@ -1884,12 +1884,12 @@ return (
               {/* Attachments Accordion - collapsed by default */}
               <Accordion type="single" collapsible defaultValue="" className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                 <AccordionItem value="attachments" className="border-0">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:no-underline">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Paperclip className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                       <span className="font-medium text-gray-700 dark:text-gray-300">Attachments (Optional)</span>
                       {selectedLabTest.attachments && parseJSON<any[]>(selectedLabTest.attachments, []).length > 0 && (
-                        <Badge variant="outline" className="ml-2 text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700">
+                        <Badge variant="outline" className="ml-2 text-xs bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600">
                           {parseJSON<any[]>(selectedLabTest.attachments, []).length}
                         </Badge>
                       )}

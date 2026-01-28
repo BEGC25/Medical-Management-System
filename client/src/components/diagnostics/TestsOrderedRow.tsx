@@ -80,7 +80,10 @@ export function TestsOrderedRow({
         {hasMore && (
           <Popover>
             <PopoverTrigger asChild>
-              <button className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20">
+              <button 
+                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                aria-label={`Show ${hiddenItems.length} additional ${modality === "lab" ? "tests" : "exam details"}`}
+              >
                 +{hiddenItems.length} more
               </button>
             </PopoverTrigger>

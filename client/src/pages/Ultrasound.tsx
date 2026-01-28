@@ -1411,14 +1411,14 @@ export default function Ultrasound() {
             <Form {...resultsForm}>
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6">
               {/* Attachments Accordion - collapsed by default */}
-              <Accordion type="single" collapsible defaultValue="" className="mb-4">
-                <AccordionItem value="images" className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:no-underline">
+              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mb-4">
+                <AccordionItem value="images" className="border-0">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Paperclip className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                       <span className="font-medium text-gray-700 dark:text-gray-300">Attachments (Optional)</span>
                       {uploadedImages.length > 0 && (
-                        <Badge variant="outline" className="ml-2 text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700">
+                        <Badge variant="outline" className="ml-2 text-xs bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600">
                           {uploadedImages.length}
                         </Badge>
                       )}

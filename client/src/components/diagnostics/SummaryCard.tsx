@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Calendar, CheckCircle2, User, FileText, Beaker, Waves } from "lucide-react";
+import { Calendar, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 type Modality = "lab" | "xray" | "ultrasound";
@@ -67,14 +67,15 @@ function formatDate(date?: string | Date | null): string {
 function formatAgeGender(age?: string | number | null, gender?: string | null): string {
   if (age === null || age === undefined || age === "") return "—";
   
+  // Handle age value - keep as-is if contains letters (like "6mo", "2y")
+  // or convert to string if numeric
   const ageStr = String(age).trim();
-  // If already has letters (like "30y" or "6mo"), extract just the number
-  const ageNum = ageStr.replace(/[^0-9]/g, '') || ageStr;
+  const ageDisplay = ageStr === "0" ? "0" : ageStr; // Handle 0 as valid age
   
-  if (!gender) return ageNum;
+  if (!gender) return ageDisplay;
   
   const genderInitial = gender.charAt(0).toUpperCase();
-  return `${ageNum}/${genderInitial}`;
+  return `${ageDisplay}/${genderInitial}`;
 }
 
 /**
