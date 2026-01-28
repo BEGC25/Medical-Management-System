@@ -25,6 +25,8 @@ import {
   labTests,
   xrayExams,
   ultrasoundExams,
+  orderLines,
+  paymentItems,
   normalizeRelatedType,
   relatedTypeToDepartment,
 } from "@shared/schema";
@@ -1675,11 +1677,62 @@ router.post("/api/payments", async (req: any, res) => {
     });
 
     if (items && items.length > 0) {
+      // Find unpaid consultation order lines for this patient to enable linking
+      // These are order_lines with relatedType='consultation' that have no payment_item yet
+      const unpaidConsultationOrderLines = await db.select({
+        id: orderLines.id,
+        serviceId: orderLines.serviceId,
+        totalPrice: orderLines.totalPrice,
+        encounterId: orderLines.encounterId,
+      })
+      .from(orderLines)
+      .innerJoin(encounters, eq(orderLines.encounterId, encounters.encounterId))
+      .leftJoin(paymentItems, eq(paymentItems.orderLineId, orderLines.id))
+      .where(and(
+        eq(encounters.patientId, patientId),
+        eq(orderLines.relatedType, "consultation"),
+        isNull(paymentItems.id) // No payment exists for this order line
+      ));
+
+      // Track which consultation order lines have been used
+      const usedOrderLineIds = new Set<number>();
+
       for (const item of items) {
         const quantity = item.quantity || 1;
         const amount = item.unitPrice * quantity;
+        
+        // Determine orderLineId - either from item directly, or find matching unpaid consultation
+        let orderLineId = item.orderLineId;
+        
+        // If this is a consultation payment without orderLineId, try to find a matching unpaid consultation order line
+        if (!orderLineId && item.relatedType === "consultation") {
+          // Find an unpaid consultation order line for this patient with matching serviceId
+          const matchingOrderLine = unpaidConsultationOrderLines.find(
+            (ol: { id: number; serviceId: number; totalPrice: number; encounterId: string }) => ol.serviceId === item.serviceId && !usedOrderLineIds.has(ol.id)
+          );
+          if (matchingOrderLine) {
+            orderLineId = matchingOrderLine.id;
+            usedOrderLineIds.add(matchingOrderLine.id);
+          }
+        }
+        
+        // Also check if item.relatedId is actually an orderLine.id (numeric string) for consultation
+        if (!orderLineId && item.relatedId && item.relatedType === "consultation") {
+          const relatedIdNum = parseInt(item.relatedId);
+          if (!isNaN(relatedIdNum)) {
+            const matchingOrderLine = unpaidConsultationOrderLines.find(
+              (ol: { id: number; serviceId: number; totalPrice: number; encounterId: string }) => ol.id === relatedIdNum && !usedOrderLineIds.has(ol.id)
+            );
+            if (matchingOrderLine) {
+              orderLineId = matchingOrderLine.id;
+              usedOrderLineIds.add(matchingOrderLine.id);
+            }
+          }
+        }
+        
         await storage.createPaymentItem({
           paymentId: payment.paymentId,
+          orderLineId: orderLineId || undefined, // Link to order line if available
           serviceId: item.serviceId,
           relatedId: item.relatedId,
           relatedType: item.relatedType,
@@ -1688,6 +1741,13 @@ router.post("/api/payments", async (req: any, res) => {
           amount,
           totalPrice: amount,
         });
+        
+        // Mark consultation order line as paid (addToCart = 0) if linked
+        if (orderLineId) {
+          await db.update(orderLines)
+            .set({ addToCart: 0 })
+            .where(eq(orderLines.id, orderLineId));
+        }
       }
 
       // Group lab_test_item payments by parent lab order

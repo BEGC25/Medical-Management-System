@@ -360,6 +360,8 @@ export default function Payment() {
       queryClient.invalidateQueries({ queryKey: ["/api/xray-exams"] });
       queryClient.invalidateQueries({ queryKey: ["/api/ultrasound-exams"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pharmacy-orders"] });
+      // Invalidate patients list to update consultation paid status on Patients page
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
     },
     onError: (error: any) => {
       toast({
@@ -1252,7 +1254,7 @@ export default function Payment() {
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            {/* Row 1: Patient info and time */}
+                            {/* Row 1: Patient info and date+time */}
                             <div className="flex flex-wrap items-center gap-2 mb-0.5">
                               <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">
                                 {patientName}
@@ -1260,7 +1262,7 @@ export default function Payment() {
                               <span className="text-gray-400 text-xs">•</span>
                               <Badge variant="outline" className="text-xs flex-shrink-0">{payment.patientId}</Badge>
                               <span className="text-gray-400 text-xs">•</span>
-                              <span className="text-xs text-gray-500">{new Date(payment.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                              <span className="text-xs text-gray-500">{new Date(payment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • {new Date(payment.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
                             
                             {/* Row 2: Service breakdown and payment method */}
