@@ -33,6 +33,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Info,
+  Paperclip,
 } from 'lucide-react';
 import clinicLogo from '@assets/Logo-Clinic_1762148237143.jpeg';
 
@@ -83,7 +84,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, CLINIC_TZ, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getUltrasoundDisplayName } from '@/lib/display-utils';
-import { ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, OrderContextStrip } from '@/components/diagnostics';
+import { ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, SummaryCard, TestsOrderedRow } from '@/components/diagnostics';
 import { ULTRASOUND_EXAM_TYPES, ULTRASOUND_SPECIFIC_EXAMS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1270,15 +1271,10 @@ export default function Ultrasound() {
               modality="ultrasound"
               title="Ultrasound Examination"
               subtitle="Complete ultrasound findings and diagnostic impression"
-              examInfo={selectedUltrasoundExam.specificExam 
-                ? `${selectedUltrasoundExam.examType} - ${selectedUltrasoundExam.specificExam}` 
-                : selectedUltrasoundExam.examType}
-              patient={{
-                name: fullName(reportPatient),
-                age: reportPatient.age,
-                gender: reportPatient.gender,
-                patientId: reportPatient.patientId
-              }}
+              showEditButton={viewMode === "view"}
+              showPrintButton={viewMode === "view"}
+              onEdit={() => setViewMode("edit")}
+              onPrint={printUltrasoundReport}
               onClose={() => setResultsModalOpen(false)}
             />
           )}
@@ -1288,35 +1284,30 @@ export default function Ultrasound() {
             {/* VIEW MODE - Unified diagnostic result UI */}
             {viewMode === "view" && selectedUltrasoundExam && (
               <div className="space-y-4 pb-6">
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2 mb-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setViewMode("edit")}
-                  className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
-                >
-                  Edit Results
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={printUltrasoundReport}
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print
-                </Button>
-              </div>
+              {/* Summary Card - Single source of truth for patient/order info */}
+              {reportPatient && (
+                <SummaryCard
+                  modality="ultrasound"
+                  patient={{
+                    name: fullName(reportPatient),
+                    patientId: reportPatient.patientId,
+                    age: reportPatient.age,
+                    gender: reportPatient.gender,
+                    phone: reportPatient.phoneNumber,
+                  }}
+                  orderId={selectedUltrasoundExam.examId || ""}
+                  priority={"routine"}
+                  paymentStatus={(selectedUltrasoundExam.paymentStatus as "paid" | "unpaid") || "unpaid"}
+                  requestedDate={selectedUltrasoundExam.requestedDate}
+                  completedDate={selectedUltrasoundExam.reportDate}
+                />
+              )}
 
-              {/* Order Context Strip - shows exam, priority, payment, dates */}
-              <OrderContextStrip
+              {/* Tests Ordered Row - compact exam info */}
+              <TestsOrderedRow
                 modality="ultrasound"
                 examType={selectedUltrasoundExam.examType || undefined}
                 scanRegion={selectedUltrasoundExam.specificExam || undefined}
-                priority={"routine"}
-                paymentStatus={selectedUltrasoundExam.paymentStatus || "unpaid"}
-                requestedDate={selectedUltrasoundExam.requestedDate}
-                completedDate={selectedUltrasoundExam.reportDate}
               />
 
               {/* Sonographic Findings Section */}
@@ -1392,31 +1383,43 @@ export default function Ultrasound() {
             {/* EDIT MODE */}
             {viewMode === "edit" && (
             <>
-              {/* Context Strip for EDIT mode */}
-              <OrderContextStrip
+              {/* Summary Card for EDIT mode */}
+              {reportPatient && selectedUltrasoundExam && (
+                <SummaryCard
+                  modality="ultrasound"
+                  patient={{
+                    name: fullName(reportPatient),
+                    patientId: reportPatient.patientId,
+                    age: reportPatient.age,
+                    gender: reportPatient.gender,
+                    phone: reportPatient.phoneNumber,
+                  }}
+                  orderId={selectedUltrasoundExam.examId || ""}
+                  priority={"routine"}
+                  paymentStatus={(selectedUltrasoundExam.paymentStatus as "paid" | "unpaid") || "unpaid"}
+                  requestedDate={selectedUltrasoundExam.requestedDate}
+                />
+              )}
+
+              {/* Tests Ordered Row */}
+              <TestsOrderedRow
                 modality="ultrasound"
                 examType={selectedUltrasoundExam?.examType || undefined}
                 scanRegion={selectedUltrasoundExam?.specificExam || undefined}
-                priority={"routine"}
-                paymentStatus={selectedUltrasoundExam?.paymentStatus || "unpaid"}
-                requestedDate={selectedUltrasoundExam?.requestedDate}
               />
               
             <Form {...resultsForm}>
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6">
-              {/* Premium Image Upload Section - Collapsible */}
+              {/* Attachments Accordion - collapsed by default */}
               <Accordion type="single" collapsible defaultValue="" className="mb-4">
-                <AccordionItem value="images" className="border-2 border-indigo-100 rounded-xl overflow-hidden">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-indigo-50 hover:no-underline">
+                <AccordionItem value="images" className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Camera className="w-5 h-5 text-indigo-600" />
-                      <span className="font-semibold text-gray-900 dark:text-gray-100">Ultrasound Images</span>
-                      <Badge variant="outline" className="ml-2 text-xs border-indigo-300 text-indigo-700 bg-indigo-50">
-                        Optional
-                      </Badge>
+                      <Paperclip className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Attachments (Optional)</span>
                       {uploadedImages.length > 0 && (
-                        <Badge className="ml-1 text-xs bg-indigo-600 text-white">
-                          {uploadedImages.length} uploaded
+                        <Badge variant="outline" className="ml-2 text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700">
+                          {uploadedImages.length}
                         </Badge>
                       )}
                     </div>
