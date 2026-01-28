@@ -1544,48 +1544,13 @@ export default function Ultrasound() {
                   name="findings"
                   render={({ field }) => (
                     <FormItem>
-                      {/* Main Textarea - ALWAYS VISIBLE */}
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            Detailed Findings
-                          </FormLabel>
-                          <Button 
-                            type="button"
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => startVoiceInput('findings')}
-                            className="border-purple-300 text-purple-700 hover:bg-purple-50"
-                          >
-                            <Mic className={`w-3 h-3 mr-1 ${isRecording.findings ? 'animate-pulse text-red-500' : ''}`} />
-                            {isRecording.findings ? 'Stop' : 'Dictate'}
-                          </Button>
-                        </div>
-                        
-                        <FormControl>
-                          <Textarea
-                            ref={findingsRef}
-                            placeholder="Describe what you see on ultrasound..."
-                            value={findings}
-                            onChange={(e) => {
-                              setFindings(e.target.value);
-                              field.onChange(e.target.value);
-                            }}
-                            rows={8}
-                            className="font-mono text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200"
-                            data-testid="textarea-findings"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </div>
-
-                      {/* Quick Findings Templates - COLLAPSIBLE (collapsed by default) */}
+                      {/* Quick Findings Templates - at TOP of findings card */}
                       <Accordion type="single" collapsible defaultValue="" className="mb-4">
                         <AccordionItem value="templates" className="border border-indigo-100 dark:border-indigo-900/40 rounded-xl overflow-hidden">
-                          <AccordionTrigger className="px-4 py-3 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 hover:no-underline">
+                          <AccordionTrigger className="px-4 py-2.5 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 hover:no-underline">
                             <div className="flex items-center gap-2">
                               <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                              <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">Quick Findings Templates</span>
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Findings Templates</span>
                             </div>
                           </AccordionTrigger>
                           
@@ -1743,6 +1708,41 @@ export default function Ultrasound() {
                           </AccordionContent>
                         </AccordionItem>
                       </Accordion>
+
+                      {/* Main Textarea - below templates */}
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <FormLabel className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Detailed Findings
+                          </FormLabel>
+                          <Button 
+                            type="button"
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startVoiceInput('findings')}
+                            className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                          >
+                            <Mic className={`w-3 h-3 mr-1 ${isRecording.findings ? 'animate-pulse text-red-500' : ''}`} />
+                            {isRecording.findings ? 'Stop' : 'Dictate'}
+                          </Button>
+                        </div>
+                        
+                        <FormControl>
+                          <Textarea
+                            ref={findingsRef}
+                            placeholder="Describe what you see on ultrasound..."
+                            value={findings}
+                            onChange={(e) => {
+                              setFindings(e.target.value);
+                              field.onChange(e.target.value);
+                            }}
+                            rows={8}
+                            className="font-mono text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200"
+                            data-testid="textarea-findings"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </div>
                     </FormItem>
                   )}
                 />
