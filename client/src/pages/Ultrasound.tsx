@@ -1328,16 +1328,11 @@ export default function Ultrasound() {
                     completedDate={selectedUltrasoundExam.reportDate}
                     abnormalCount={abnormalCount}
                     criticalCount={criticalCount}
+                    examType={selectedUltrasoundExam.examType || undefined}
+                    scanRegion={selectedUltrasoundExam.specificExam || undefined}
                   />
                 );
               })()}
-
-              {/* Tests Ordered Row - compact exam info */}
-              <TestsOrderedRow
-                modality="ultrasound"
-                examType={selectedUltrasoundExam.examType || undefined}
-                scanRegion={selectedUltrasoundExam.specificExam || undefined}
-              />
 
               {/* Sonographic Findings Section */}
 
@@ -1412,7 +1407,7 @@ export default function Ultrasound() {
             {/* EDIT MODE */}
             {viewMode === "edit" && (
             <>
-              {/* Summary Card for EDIT mode */}
+              {/* Summary Card for EDIT mode - includes exam info */}
               {reportPatient && selectedUltrasoundExam && (
                 <SummaryCard
                   modality="ultrasound"
@@ -1427,41 +1422,30 @@ export default function Ultrasound() {
                   priority={"routine"}
                   paymentStatus={(selectedUltrasoundExam.paymentStatus as "paid" | "unpaid") || "unpaid"}
                   requestedDate={selectedUltrasoundExam.requestedDate}
+                  examType={selectedUltrasoundExam?.examType || undefined}
+                  scanRegion={selectedUltrasoundExam?.specificExam || undefined}
                 />
               )}
-
-              {/* Tests Ordered Row */}
-              <TestsOrderedRow
-                modality="ultrasound"
-                examType={selectedUltrasoundExam?.examType || undefined}
-                scanRegion={selectedUltrasoundExam?.specificExam || undefined}
-              />
               
             <Form {...resultsForm}>
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6">
-              {/* Attachments Accordion - collapsed by default, calmer styling */}
-              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200/70 dark:border-gray-700/70 rounded-lg overflow-hidden mb-4">
+              {/* Attachments Accordion - collapsed by default, quiet styling */}
+              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200/50 dark:border-gray-700/50 rounded-lg overflow-hidden mb-4">
                 <AccordionItem value="images" className="border-0">
-                  <AccordionTrigger className="px-3 py-2.5 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:no-underline">
+                  <AccordionTrigger className="px-3 py-2 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Paperclip className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                      <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
+                      <Paperclip className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                      <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
                         Attachments{uploadedImages.length > 0 ? ` (${uploadedImages.length})` : " (Optional)"}
                       </span>
                     </div>
                   </AccordionTrigger>
                   
                   <AccordionContent className="px-3 pb-3">
-                    <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50/80 to-purple-50/80 dark:from-violet-950/10 dark:to-purple-950/10 border border-violet-200/60 dark:border-violet-800/60">
-                      <div className="flex items-center gap-2.5 mb-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-md">
-                          <Camera className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-semibold text-violet-800 dark:text-violet-200">Upload Sonographic Images</h3>
-                          <p className="text-xs text-violet-600/80 dark:text-violet-400/80">Upload images or DICOM files (max 10 files, 20MB each)</p>
-                        </div>
-                      </div>
+                    <div className="p-3 rounded-lg bg-gray-50/50 dark:bg-gray-800/20 border border-gray-200/70 dark:border-gray-700/70">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                        Upload images or DICOM files (max 10 files, 20MB each)
+                      </p>
                       
                       <ObjectUploader
                         maxNumberOfFiles={10}

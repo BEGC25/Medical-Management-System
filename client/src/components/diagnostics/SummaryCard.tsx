@@ -25,6 +25,12 @@ interface SummaryCardProps {
   // Results summary (for completed view)
   abnormalCount?: number;
   criticalCount?: number;
+  // Tests/Exam ordered (now integrated into summary card)
+  tests?: string[];
+  examType?: string | null;
+  bodyPart?: string | null;
+  views?: string | null;
+  scanRegion?: string | null;
 }
 
 const priorityConfig = {
@@ -60,18 +66,21 @@ const orderIdLabels: Record<Modality, string> = {
 };
 
 // Modality-specific subtle accent colors (premium, not loud)
-const modalityAccentConfig: Record<Modality, { accentBar: string; idColor: string }> = {
+const modalityAccentConfig: Record<Modality, { accentBar: string; idColor: string; borderColor: string }> = {
   lab: {
     accentBar: "bg-blue-600 dark:bg-blue-500",
-    idColor: "text-blue-700 dark:text-blue-400"
+    idColor: "text-blue-700 dark:text-blue-400",
+    borderColor: "border-blue-200 dark:border-blue-800"
   },
   xray: {
     accentBar: "bg-cyan-600 dark:bg-cyan-500",
-    idColor: "text-cyan-700 dark:text-cyan-400"
+    idColor: "text-cyan-700 dark:text-cyan-400",
+    borderColor: "border-cyan-200 dark:border-cyan-800"
   },
   ultrasound: {
     accentBar: "bg-violet-600 dark:bg-violet-500",
-    idColor: "text-violet-700 dark:text-violet-400"
+    idColor: "text-violet-700 dark:text-violet-400",
+    borderColor: "border-violet-200 dark:border-violet-800"
   }
 };
 
@@ -98,12 +107,77 @@ function formatAgeGender(age?: string | number | null, gender?: string | null): 
 }
 
 /**
- * SummaryCard - A print-style 2-column summary card for diagnostic modals.
+ * Shorten verbose view descriptions to compact format
+ */
+function shortenViewDescription(views: string): string {
+  const lowerViews = views.toLowerCase();
+  
+  if (lowerViews.includes("ap") && lowerViews.includes("lateral")) {
+    return "AP + Lateral";
+  }
+  if (lowerViews.includes("pa") && lowerViews.includes("lateral")) {
+    return "PA + Lateral";
+  }
+  if (lowerViews.includes("oblique") && lowerViews.includes("lateral")) {
+    return "Oblique + Lateral";
+  }
+  if (lowerViews.includes("anterior") && lowerViews.includes("posterior")) {
+    return "AP";
+  }
+  
+  if (views.length > 30) {
+    const viewTerms: string[] = [];
+    if (lowerViews.includes("ap")) viewTerms.push("AP");
+    if (lowerViews.includes("pa")) viewTerms.push("PA");
+    if (lowerViews.includes("lateral")) viewTerms.push("Lateral");
+    if (lowerViews.includes("oblique")) viewTerms.push("Oblique");
+    if (lowerViews.includes("axial")) viewTerms.push("Axial");
+    if (lowerViews.includes("lordotic")) viewTerms.push("Lordotic");
+    
+    if (viewTerms.length > 0) {
+      return viewTerms.join(" + ");
+    }
+  }
+  
+  return views;
+}
+
+/**
+ * Format exam label combining exam type with body part or scan region
+ */
+function formatExamLabel(examType?: string | null, bodyPart?: string | null, scanRegion?: string | null): string {
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  let parts: string[] = [];
+  
+  if (examType) {
+    parts.push(capitalize(examType.trim()));
+  }
+  
+  if (bodyPart && bodyPart.toLowerCase() !== examType?.toLowerCase()) {
+    parts.push(capitalize(bodyPart.trim()));
+  }
+  
+  if (scanRegion) {
+    const scanLower = scanRegion.toLowerCase();
+    const examLower = examType?.toLowerCase() || "";
+    if (!scanLower.includes(examLower) && !examLower.includes(scanLower.split(" ")[0])) {
+      parts.push(scanRegion.trim());
+    } else if (scanRegion !== examType) {
+      parts = [scanRegion.trim()];
+    }
+  }
+  
+  return parts.join(" — ");
+}
+
+/**
+ * SummaryCard - A print-style unified summary card for diagnostic modals.
  * 
- * This is the SINGLE SOURCE OF TRUTH for:
+ * This is the SINGLE SOURCE OF TRUTH (one scan zone) for:
  * - Patient Name, Patient ID, Age/Gender, Phone
  * - Order ID, Priority, Payment Status, Requested/Completed dates
  * - Abnormal/Critical count chip (when applicable)
+ * - Tests/Exam ordered chips (now integrated inside)
  * 
  * 🚫 These fields should NOT be repeated elsewhere in the modal body.
  */
@@ -116,7 +190,12 @@ export function SummaryCard({
   requestedDate,
   completedDate,
   abnormalCount = 0,
-  criticalCount = 0
+  criticalCount = 0,
+  tests,
+  examType,
+  bodyPart,
+  views,
+  scanRegion
 }: SummaryCardProps) {
   const priorityConf = priorityConfig[priority];
   const paymentConf = paymentConfig[paymentStatus];
@@ -126,34 +205,68 @@ export function SummaryCard({
   // Show summary chip only in completed mode when there are findings
   const showResultsSummary = completedDate && (abnormalCount > 0 || criticalCount > 0);
 
-  return (
-    <div className="space-y-3 mb-4">
-      {/* Results Summary Chip - shown at top when there are abnormal/critical findings */}
-      {showResultsSummary && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
-          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Results:</span>
-          {criticalCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-xs font-semibold">
-              <AlertCircle className="w-3 h-3" /> {criticalCount} Critical
-            </span>
-          )}
-          {abnormalCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-semibold">
-              <AlertTriangle className="w-3 h-3" /> {abnormalCount} Abnormal
-            </span>
-          )}
-        </div>
-      )}
+  // Build tests/exam display items
+  const getTestsDisplay = () => {
+    if (modality === "lab" && tests && tests.length > 0) {
+      return { label: "Tests Ordered:", items: tests, viewsChip: undefined };
+    }
+    if (modality === "xray") {
+      const examLabel = formatExamLabel(examType, bodyPart, null);
+      const items = examLabel ? [examLabel] : [];
+      const shortenedViews = views ? shortenViewDescription(views) : null;
+      return { 
+        label: "Exam requested:", 
+        items, 
+        viewsChip: shortenedViews ? `Views: ${shortenedViews}` : undefined 
+      };
+    }
+    if (modality === "ultrasound") {
+      const examLabel = formatExamLabel(examType, null, scanRegion);
+      const items = examLabel ? [examLabel] : [];
+      return { label: "Exam requested:", items, viewsChip: undefined };
+    }
+    return { label: "Tests:", items: [], viewsChip: undefined };
+  };
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Left Column: Patient Information */}
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-          <div className="text-xs font-bold tracking-wider text-gray-500 dark:text-gray-400 uppercase mb-3">
-            Patient Information
+  const testsDisplay = getTestsDisplay();
+  const hasTests = testsDisplay.items.length > 0 || testsDisplay.viewsChip;
+
+  // For lab tests, show first 3, then "+N more"
+  const maxVisibleTests = 3;
+  const visibleTests = testsDisplay.items.slice(0, maxVisibleTests);
+  const hiddenTests = testsDisplay.items.slice(maxVisibleTests);
+
+  return (
+    <div className={`rounded-xl border ${accentConfig.borderColor} bg-white dark:bg-gray-900 mb-4 overflow-hidden`}>
+      {/* Subtle modality accent bar at top */}
+      <div className={`h-1 ${accentConfig.accentBar}`} />
+      
+      <div className="p-4 space-y-4">
+        {/* Results Summary Strip - shown at top when there are abnormal/critical findings */}
+        {showResultsSummary && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Results:</span>
+            {criticalCount > 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-xs font-semibold">
+                <AlertCircle className="w-3 h-3" /> {criticalCount} Critical
+              </span>
+            )}
+            {abnormalCount > 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-semibold">
+                <AlertTriangle className="w-3 h-3" /> {abnormalCount} Abnormal
+              </span>
+            )}
           </div>
-          <div className={`h-[2px] ${accentConfig.accentBar} rounded-full mb-3`} />
-          
+        )}
+
+        {/* Two-column layout: Patient Info | Test Details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Left Column: Patient Information */}
           <div className="space-y-2.5 text-sm">
+            <div className="text-xs font-bold tracking-wider text-gray-500 dark:text-gray-400 uppercase mb-2">
+              Patient Information
+            </div>
+            
             <div className="flex items-start justify-between gap-3">
               <span className="text-gray-500 dark:text-gray-400 font-medium">Name:</span>
               <span className="font-bold text-gray-900 dark:text-gray-100 text-right leading-snug break-words">
@@ -184,16 +297,13 @@ export function SummaryCard({
               </div>
             )}
           </div>
-        </div>
 
-        {/* Right Column: Test Details */}
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-          <div className="text-xs font-bold tracking-wider text-gray-500 dark:text-gray-400 uppercase mb-3">
-            Test Details
-          </div>
-          <div className={`h-[2px] ${accentConfig.accentBar} rounded-full mb-3`} />
-          
+          {/* Right Column: Test Details */}
           <div className="space-y-2.5 text-sm">
+            <div className="text-xs font-bold tracking-wider text-gray-500 dark:text-gray-400 uppercase mb-2">
+              Test Details
+            </div>
+            
             <div className="flex items-center justify-between gap-3">
               <span className="text-gray-500 dark:text-gray-400 font-medium">{orderLabel}:</span>
               <span className={`font-bold ${accentConfig.idColor} tabular-nums`}>
@@ -244,6 +354,43 @@ export function SummaryCard({
             )}
           </div>
         </div>
+
+        {/* Tests/Exam Ordered Row - integrated at bottom of summary card */}
+        {hasTests && (
+          <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {testsDisplay.label}
+              </span>
+              
+              {visibleTests.map((item, idx) => (
+                <Badge
+                  key={idx}
+                  variant="outline"
+                  className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 text-xs font-medium px-2.5 py-1"
+                >
+                  {item}
+                </Badge>
+              ))}
+              
+              {/* Views chip for X-ray */}
+              {testsDisplay.viewsChip && (
+                <Badge
+                  variant="outline"
+                  className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 text-xs font-medium px-2.5 py-1"
+                >
+                  {testsDisplay.viewsChip}
+                </Badge>
+              )}
+              
+              {hiddenTests.length > 0 && (
+                <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 px-2 py-1">
+                  +{hiddenTests.length} more
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
