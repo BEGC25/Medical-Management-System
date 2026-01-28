@@ -28,6 +28,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Info,
+  Paperclip,
 } from 'lucide-react';
 import clinicLogo from '@assets/Logo-Clinic_1762148237143.jpeg';
 
@@ -80,7 +81,7 @@ import { addToPendingSync } from '@/lib/offline';
 import { getDateRangeForAPI, formatDateInZone, getZonedNow, getClinicDayKey, formatLongDate } from '@/lib/date-utils';
 import { timeAgo } from '@/lib/time-utils';
 import { getXrayDisplayName, toTitleCase } from '@/lib/display-utils';
-import { ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, OrderContextStrip } from '@/components/diagnostics';
+import { ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, SummaryCard, TestsOrderedRow } from '@/components/diagnostics';
 import { XRAY_EXAM_TYPES, XRAY_BODY_PARTS } from '@/lib/diagnostic-catalog';
 
 /* ------------------------------------------------------------------ */
@@ -1122,13 +1123,10 @@ export default function XRay() {
               modality="xray"
               title="X-Ray Examination"
               subtitle="Complete radiological findings and diagnosis"
-              examInfo={`${selectedXrayExam.examType?.charAt(0).toUpperCase() + selectedXrayExam.examType?.slice(1) || ''}${selectedXrayExam.bodyPart ? ' • ' + selectedXrayExam.bodyPart : ''}`}
-              patient={{
-                name: fullName(reportPatient),
-                age: reportPatient.age,
-                gender: reportPatient.gender,
-                patientId: reportPatient.patientId
-              }}
+              showEditButton={viewMode === "view"}
+              showPrintButton={viewMode === "view"}
+              onEdit={() => setViewMode("edit")}
+              onPrint={printXrayReport}
               onClose={() => setResultsModalOpen(false)}
             />
           )}
@@ -1137,36 +1135,31 @@ export default function XRay() {
             {/* VIEW MODE - Unified diagnostic result UI */}
             {viewMode === "view" && selectedXrayExam && (
               <div className="space-y-4 pb-6">
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2 mb-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setViewMode("edit")}
-                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                >
-                  Edit Results
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={printXrayReport}
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print
-                </Button>
-              </div>
+              {/* Summary Card - Single source of truth for patient/order info */}
+              {reportPatient && (
+                <SummaryCard
+                  modality="xray"
+                  patient={{
+                    name: fullName(reportPatient),
+                    patientId: reportPatient.patientId,
+                    age: reportPatient.age,
+                    gender: reportPatient.gender,
+                    phone: reportPatient.phoneNumber,
+                  }}
+                  orderId={selectedXrayExam.examId || ""}
+                  priority={"routine"}
+                  paymentStatus={(selectedXrayExam.paymentStatus as "paid" | "unpaid") || "unpaid"}
+                  requestedDate={selectedXrayExam.requestedDate}
+                  completedDate={selectedXrayExam.reportDate}
+                />
+              )}
 
-              {/* Order Context Strip - shows exam, priority, payment, dates */}
-              <OrderContextStrip
+              {/* Tests Ordered Row - compact exam info */}
+              <TestsOrderedRow
                 modality="xray"
                 examType={selectedXrayExam.examType || undefined}
                 bodyPart={selectedXrayExam.bodyPart || undefined}
                 views={selectedXrayExam.viewDescriptions || undefined}
-                priority={"routine"}
-                paymentStatus={selectedXrayExam.paymentStatus || "unpaid"}
-                requestedDate={selectedXrayExam.requestedDate}
-                completedDate={selectedXrayExam.reportDate}
               />
 
               {/* Radiological Findings Section */}
@@ -1261,80 +1254,110 @@ export default function XRay() {
             {/* EDIT MODE */}
             {viewMode === "edit" && (
             <>
-              {/* Context Strip for EDIT mode */}
-              <OrderContextStrip
+              {/* Summary Card for EDIT mode */}
+              {reportPatient && selectedXrayExam && (
+                <SummaryCard
+                  modality="xray"
+                  patient={{
+                    name: fullName(reportPatient),
+                    patientId: reportPatient.patientId,
+                    age: reportPatient.age,
+                    gender: reportPatient.gender,
+                    phone: reportPatient.phoneNumber,
+                  }}
+                  orderId={selectedXrayExam.examId || ""}
+                  priority={"routine"}
+                  paymentStatus={(selectedXrayExam.paymentStatus as "paid" | "unpaid") || "unpaid"}
+                  requestedDate={selectedXrayExam.requestedDate}
+                />
+              )}
+
+              {/* Tests Ordered Row */}
+              <TestsOrderedRow
                 modality="xray"
                 examType={selectedXrayExam?.examType || undefined}
                 bodyPart={selectedXrayExam?.bodyPart || undefined}
                 views={selectedXrayExam?.viewDescriptions || undefined}
-                priority={"routine"}
-                paymentStatus={selectedXrayExam?.paymentStatus || "unpaid"}
-                requestedDate={selectedXrayExam?.requestedDate}
               />
               
             <Form {...resultsForm}>
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 pb-6">
               
-              {/* Tabs for Describe Views vs Upload Images */}
-              <Tabs value={imageUploadMode} onValueChange={(v) => setImageUploadMode(v as 'describe' | 'upload')} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="describe" className="flex items-center gap-2">
-                    <Filter className="w-4 h-4" />
-                    Describe X-Ray Views
-                  </TabsTrigger>
-                  <TabsTrigger value="upload">📤 Upload Images</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="describe" className="mt-4">
-                  <div className="p-5 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-2 border-green-200 dark:border-green-800">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg">
-                        <FileText className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-green-900 dark:text-green-100">Describe X-Ray Views</h3>
-                        <p className="text-xs text-green-700 dark:text-green-300">Document image details without uploading files</p>
-                      </div>
+              {/* Attachments Accordion - collapsed by default */}
+              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                <AccordionItem value="attachments" className="border-0">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Attachments (Optional)</span>
+                      {uploadedImages.length > 0 && (
+                        <Badge variant="outline" className="ml-2 text-xs bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600">
+                          {uploadedImages.length}
+                        </Badge>
+                      )}
                     </div>
-                    
-                    <div className="mb-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm font-semibold text-gray-700">
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    {/* Tabs for Describe Views vs Upload Images */}
+                    <Tabs value={imageUploadMode} onValueChange={(v) => setImageUploadMode(v as 'describe' | 'upload')} className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="describe" className="flex items-center gap-2">
+                          <Filter className="w-4 h-4" />
                           Describe X-Ray Views
-                        </label>
-                        <Button 
-                          type="button"
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => startVoiceInput('viewDescription')}
-                          className="border-purple-300 text-purple-700 hover:bg-purple-50"
-                        >
-                          <Mic className={`w-3 h-3 mr-1 ${isRecording.viewDescription ? 'animate-pulse text-red-500' : ''}`} />
-                          {isRecording.viewDescription ? 'Stop' : 'Dictate'}
-                        </Button>
-                      </div>
+                        </TabsTrigger>
+                        <TabsTrigger value="upload">📤 Upload Images</TabsTrigger>
+                      </TabsList>
                       
-                      <Textarea
-                        ref={viewDescriptionRef}
-                        placeholder="Example: AP and Lateral views obtained. Patient positioning adequate. Good penetration and exposure..."
-                        value={viewDescriptions}
-                        onChange={(e) => setViewDescriptions(e.target.value)}
-                        rows={4}
-                        className="w-full bg-white dark:bg-gray-900 focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
-                      />
-                    </div>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="upload" className="mt-4">
-                  {/* Premium Image Upload Section */}
-                  <div className="p-5 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-2 border-blue-200 dark:border-blue-800">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
-                        <Camera className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-blue-900 dark:text-blue-100">X-Ray Images (Optional)</h3>
+                      <TabsContent value="describe" className="mt-4">
+                        <div className="p-5 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-2 border-green-200 dark:border-green-800">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg">
+                              <FileText className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-green-900 dark:text-green-100">Describe X-Ray Views</h3>
+                              <p className="text-xs text-green-700 dark:text-green-300">Document image details without uploading files</p>
+                            </div>
+                          </div>
+                          
+                          <div className="mb-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="text-sm font-semibold text-gray-700">
+                                Describe X-Ray Views
+                              </label>
+                              <Button 
+                                type="button"
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => startVoiceInput('viewDescription')}
+                                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                              >
+                                <Mic className={`w-3 h-3 mr-1 ${isRecording.viewDescription ? 'animate-pulse text-red-500' : ''}`} />
+                                {isRecording.viewDescription ? 'Stop' : 'Dictate'}
+                              </Button>
+                            </div>
+                            
+                            <Textarea
+                              ref={viewDescriptionRef}
+                              placeholder="Example: AP and Lateral views obtained. Patient positioning adequate. Good penetration and exposure..."
+                              value={viewDescriptions}
+                              onChange={(e) => setViewDescriptions(e.target.value)}
+                              rows={4}
+                              className="w-full bg-white dark:bg-gray-900 focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                            />
+                          </div>
+                        </div>
+                      </TabsContent>
+                      
+                      <TabsContent value="upload" className="mt-4">
+                        {/* Premium Image Upload Section */}
+                        <div className="p-5 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-2 border-blue-200 dark:border-blue-800">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+                              <Camera className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-blue-900 dark:text-blue-100">X-Ray Images (Optional)</h3>
                         <p className="text-xs text-blue-700 dark:text-blue-300">Upload radiological films or digital images (max 10 files)</p>
                       </div>
                     </div>
@@ -1396,7 +1419,10 @@ export default function XRay() {
                     )}
                   </div>
                 </TabsContent>
-              </Tabs>
+                    </Tabs>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
 
               {/* Interactive Finding Builder System */}
               <FormField

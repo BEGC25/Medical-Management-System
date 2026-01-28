@@ -26,6 +26,7 @@ import {
   Activity,
   Info,
   AlertCircle,
+  Paperclip,
 } from "lucide-react";
 
 import { ObjectUploader } from "@/components/ObjectUploader";
@@ -60,6 +61,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useServicesByCategory } from "@/hooks/useServicesByCategory";
@@ -76,7 +78,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
 import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
 import { timeAgo } from "@/lib/time-utils";
-import { ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, OrderContextStrip } from "@/components/diagnostics";
+import { ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, SummaryCard, TestsOrderedRow } from "@/components/diagnostics";
 import { LAB_TEST_CATALOG, getLabCategoryLabel, type LabTestCategory } from "@/lib/diagnostic-catalog";
 import { interpretLabResults } from "@/lib/lab-interpretation";
 import { isTestAbnormal, isFieldAbnormal, getReferenceRange, getUnit, getTestCategoryLabel } from "@/lib/lab-abnormality";
@@ -1632,48 +1634,40 @@ return (
             modality="lab"
             title="Laboratory Test Results"
             subtitle="Record laboratory test results and findings"
-            testId={selectedLabTest?.testId}
-            patient={reportPatient ? {
-              name: fullName(reportPatient),
-              age: reportPatient.age,
-              gender: reportPatient.gender,
-              patientId: reportPatient.patientId
-            } : undefined}
+            showEditButton={viewMode === "view"}
+            showPrintButton={viewMode === "view"}
+            onEdit={() => setViewMode("edit")}
+            onPrint={printLabReport}
             onClose={() => setResultsModalOpen(false)}
           />
 
           {/* VIEW MODE - Unified diagnostic result UI */}
           {selectedLabTest && viewMode === "view" && (
             <div className="space-y-4 px-6 max-h-[calc(90vh-180px)] overflow-y-auto">
-              {/* Order Context Strip - shows tests, priority, payment, dates */}
-              <OrderContextStrip
+              {/* Summary Card - Single source of truth for patient/order info */}
+              {reportPatient && (
+                <SummaryCard
+                  modality="lab"
+                  patient={{
+                    name: fullName(reportPatient),
+                    patientId: reportPatient.patientId,
+                    age: reportPatient.age,
+                    gender: reportPatient.gender,
+                    phone: reportPatient.phoneNumber,
+                  }}
+                  orderId={selectedLabTest.testId || ""}
+                  priority={(selectedLabTest.priority as "routine" | "urgent" | "stat") || "routine"}
+                  paymentStatus={(selectedLabTest.paymentStatus as "paid" | "unpaid") || "unpaid"}
+                  requestedDate={selectedLabTest.requestedDate}
+                  completedDate={selectedLabTest.completedDate}
+                />
+              )}
+
+              {/* Tests Ordered Row - compact with +N more */}
+              <TestsOrderedRow
                 modality="lab"
                 tests={parseJSON<string[]>(selectedLabTest.tests, [])}
-                priority={selectedLabTest.priority || "routine"}
-                paymentStatus={selectedLabTest.paymentStatus || "unpaid"}
-                requestedDate={selectedLabTest.requestedDate}
-                completedDate={selectedLabTest.completedDate}
               />
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2 mb-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setViewMode("edit")}
-                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                >
-                  Edit Results
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={printLabReport}
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print
-                </Button>
-              </div>
 
               {/* Laboratory Results Section */}
               <div>
@@ -1863,89 +1857,121 @@ return (
           {selectedLabTest && viewMode === "edit" && (
             <div className="px-6 max-h-[calc(90vh-180px)] overflow-y-auto">
              <div className="space-y-6">
-              {/* Context Strip for EDIT mode */}
-              <OrderContextStrip
-                modality="lab"
-                tests={parseJSON<string[]>(selectedLabTest.tests, [])}
-                priority={selectedLabTest.priority || "routine"}
-                paymentStatus={selectedLabTest.paymentStatus || "unpaid"}
-                requestedDate={selectedLabTest.requestedDate}
-              />
+              {/* Summary Card for EDIT mode */}
+              {reportPatient && (
+                <SummaryCard
+                  modality="lab"
+                  patient={{
+                    name: fullName(reportPatient),
+                    patientId: reportPatient.patientId,
+                    age: reportPatient.age,
+                    gender: reportPatient.gender,
+                    phone: reportPatient.phoneNumber,
+                  }}
+                  orderId={selectedLabTest.testId || ""}
+                  priority={(selectedLabTest.priority as "routine" | "urgent" | "stat") || "routine"}
+                  paymentStatus={(selectedLabTest.paymentStatus as "paid" | "unpaid") || "unpaid"}
+                  requestedDate={selectedLabTest.requestedDate}
+                />
+              )}
+
+              {/* Tests Ordered Row */}
+              <TestsOrderedRow
+                modality="lab"
+                tests={parseJSON<string[]>(selectedLabTest.tests, [])}
+              />
               
-              {/* Photo uploader */}
-              <div className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                <h5 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center">
-                  <Camera className="w-4 h-4 mr-2" />
-                  Lab Printout Photos
-                </h5>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                  Upload photos of CBC, chemistry, or other machine printouts to reduce manual typing.
-                </p>
+              {/* Attachments Accordion - collapsed by default */}
+              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                <AccordionItem value="attachments" className="border-0">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Attachments (Optional)</span>
+                      {selectedLabTest.attachments && parseJSON<any[]>(selectedLabTest.attachments, []).length > 0 && (
+                        <Badge variant="outline" className="ml-2 text-xs bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600">
+                          {parseJSON<any[]>(selectedLabTest.attachments, []).length}
+                        </Badge>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="p-4 border border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                      <h5 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center">
+                        <Camera className="w-4 h-4 mr-2" />
+                        Lab Printout Photos
+                      </h5>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                        Upload photos of CBC, chemistry, or other machine printouts to reduce manual typing.
+                      </p>
 
-                <ObjectUploader
-                  maxNumberOfFiles={5}
-                  maxFileSize={10485760}
-                  accept="image/*"
-                  onGetUploadParameters={async () => {
-                    const response = await fetch("/api/objects/upload", { method: "POST" });
-                    const data = await response.json();
-                    return { method: "PUT" as const, url: data.uploadURL };
-                  }}
-                  onComplete={async (uploadedFiles) => {
-                    const attachments = uploadedFiles.map((f) => ({ url: f.url, name: f.name, type: "lab_printout" }));
-                    try {
-                      const response = await fetch(
-                        `/api/lab-tests/${selectedLabTest.testId}/attachments`,
-                        {
-                          method: "PUT",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ attachments }),
-                        }
-                      );
-                      if (response.ok) {
-                        toast({ title: "Success", description: "Lab printout photos uploaded successfully!" });
-                        queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] });
-                      } else {
-                        throw new Error("Upload failed");
-                      }
-                    } catch {
-                      toast({
-                        title: "Error",
-                        description: "Failed to save uploaded photos",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
-                  buttonClassName="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Camera className="w-4 h-4 mr-2" />
-                  Upload Lab Photos
-                </ObjectUploader>
+                      <ObjectUploader
+                        maxNumberOfFiles={5}
+                        maxFileSize={10485760}
+                        accept="image/*"
+                        onGetUploadParameters={async () => {
+                          const response = await fetch("/api/objects/upload", { method: "POST" });
+                          const data = await response.json();
+                          return { method: "PUT" as const, url: data.uploadURL };
+                        }}
+                        onComplete={async (uploadedFiles) => {
+                          const attachments = uploadedFiles.map((f) => ({ url: f.url, name: f.name, type: "lab_printout" }));
+                          try {
+                            const response = await fetch(
+                              `/api/lab-tests/${selectedLabTest.testId}/attachments`,
+                              {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ attachments }),
+                              }
+                            );
+                            if (response.ok) {
+                              toast({ title: "Success", description: "Lab printout photos uploaded successfully!" });
+                              queryClient.invalidateQueries({ queryKey: ["/api/lab-tests"] });
+                            } else {
+                              throw new Error("Upload failed");
+                            }
+                          } catch {
+                            toast({
+                              title: "Error",
+                              description: "Failed to save uploaded photos",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        buttonClassName="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        Upload Lab Photos
+                      </ObjectUploader>
 
-                {selectedLabTest.attachments && (
-                  <div className="mt-4">
-                    <h6 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
-                      Uploaded Photos:
-                    </h6>
-                    <div className="flex flex-wrap gap-2">
-                      {parseJSON<any[]>(selectedLabTest.attachments, []).map((a, i) => (
-                        <div key={i} className="flex items-center gap-2 bg-white dark:bg-gray-700 p-2 rounded border">
-                          <FileImage className="w-4 h-4 text-blue-600" />
-                          <span className="text-sm">{a.name}</span>
-                          <a
-                            href={a.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 text-sm"
-                          >
-                            View
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+                      {selectedLabTest.attachments && parseJSON<any[]>(selectedLabTest.attachments, []).length > 0 && (
+                        <div className="mt-4">
+                          <h6 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                            Uploaded Photos:
+                          </h6>
+                          <div className="flex flex-wrap gap-2">
+                            {parseJSON<any[]>(selectedLabTest.attachments, []).map((a, i) => (
+                              <div key={i} className="flex items-center gap-2 bg-white dark:bg-gray-700 p-2 rounded border">
+                                <FileImage className="w-4 h-4 text-blue-600" />
+                                <span className="text-sm">{a.name}</span>
+                                <a
+                                  href={a.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:text-blue-800 text-sm"
+                                >
+                                  View
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
 
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-4">
                 {/* Dynamic fields per ordered test */}
