@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Printer, X } from "lucide-react";
 import { useRef } from "react";
+import { formatClinicDay, formatClinicDateTime, getClinicNow } from "@/lib/date-utils";
 
 interface PrescriptionWithPatient extends PharmacyOrder {
   patient: Patient;
@@ -12,28 +13,6 @@ interface PrescriptionWithPatient extends PharmacyOrder {
 interface PharmacyReceiptProps {
   order: PrescriptionWithPatient | null;
   onClose: () => void;
-}
-
-function formatDate(dateString: string): string {
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  } catch {
-    return dateString;
-  }
-}
-
-function formatDateTime(dateString: string): string {
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    const dateFormatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    const timeFormatted = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-    return `${dateFormatted} at ${timeFormatted}`;
-  } catch {
-    return dateString;
-  }
 }
 
 export function PharmacyReceipt({ order, onClose }: PharmacyReceiptProps) {
@@ -119,12 +98,12 @@ export function PharmacyReceipt({ order, onClose }: PharmacyReceiptProps) {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Prescribed:</span>
-                  <span className="font-semibold text-gray-900">{formatDate(order.createdAt)}</span>
+                  <span className="font-semibold text-gray-900">{formatClinicDay(order.createdAt, 'MMMM d, yyyy')}</span>
                 </div>
                 {order.dispensedAt && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Dispensed:</span>
-                    <span className="font-semibold text-gray-900">{formatDate(order.dispensedAt)}</span>
+                    <span className="font-semibold text-gray-900">{formatClinicDay(order.dispensedAt, 'MMMM d, yyyy')}</span>
                   </div>
                 )}
                 {order.dispensedBy && (
@@ -194,14 +173,7 @@ export function PharmacyReceipt({ order, onClose }: PharmacyReceiptProps) {
           {/* Footer */}
           <div className="border-t-2 border-gray-300 pt-6 mt-8">
             <div className="text-center text-xs text-gray-500 mb-4">
-              Receipt generated on {new Date().toLocaleString('en-US', { 
-                month: 'long', 
-                day: 'numeric', 
-                year: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-              })}
+              Receipt generated on {formatClinicDateTime(getClinicNow().toISOString(), 'MMMM d, yyyy \'at\' h:mm a')}
             </div>
             <div className="flex justify-between items-end mt-8 pt-4 border-t border-gray-200">
               <div className="text-sm">
