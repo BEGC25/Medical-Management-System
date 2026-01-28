@@ -2390,7 +2390,7 @@ router.get("/api/patients/:patientId/unpaid-orders", async (req, res) => {
 
     // Pharmacy orders remain as single items - process with async price calculation
     const pharmacyOrdersPromises = pharmacyOrders
-      .filter((order) => order.paymentStatus === "unpaid")
+      .filter((order) => order.paymentStatus === "unpaid" && order.status === "prescribed")
       .map(async (order) => {
         const unitPrice = await calculatePharmacyOrderPriceHelper(order, services, drugMap, storage);
         
