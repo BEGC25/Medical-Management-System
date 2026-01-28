@@ -1117,7 +1117,7 @@ export default function XRay() {
 
       {/* Results/Report Dialog */}
       <Dialog open={resultsModalOpen} onOpenChange={setResultsModalOpen}>
-        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border-0">
+        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border-0 flex flex-col" hideCloseButton>
           {reportPatient && selectedXrayExam && (
             <UnifiedModalHeader
               modality="xray"
@@ -1131,7 +1131,7 @@ export default function XRay() {
             />
           )}
 
-          <div className="px-6 max-h-[calc(95vh-180px)] overflow-y-auto">
+          <div className="flex-1 px-6 overflow-y-auto min-h-0">
             {/* VIEW MODE - Unified diagnostic result UI */}
             {viewMode === "view" && selectedXrayExam && (
               <div className="space-y-4 pb-6">
@@ -1283,21 +1283,18 @@ export default function XRay() {
             <Form {...resultsForm}>
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 pb-6">
               
-              {/* Attachments Accordion - collapsed by default */}
-              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              {/* Attachments Accordion - collapsed by default, calmer styling */}
+              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200/70 dark:border-gray-700/70 rounded-lg overflow-hidden">
                 <AccordionItem value="attachments" className="border-0">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:no-underline">
+                  <AccordionTrigger className="px-3 py-2.5 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Attachments (Optional)</span>
-                      {uploadedImages.length > 0 && (
-                        <Badge variant="outline" className="ml-2 text-xs bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600">
-                          {uploadedImages.length}
-                        </Badge>
-                      )}
+                      <Paperclip className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
+                        Attachments{uploadedImages.length > 0 ? ` (${uploadedImages.length})` : " (Optional)"}
+                      </span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
+                  <AccordionContent className="px-3 pb-3">
                     {/* Tabs for Describe Views vs Upload Images */}
                     <Tabs value={imageUploadMode} onValueChange={(v) => setImageUploadMode(v as 'describe' | 'upload')} className="w-full">
                       <TabsList className="grid w-full grid-cols-2">
@@ -1906,14 +1903,11 @@ export default function XRay() {
               <Accordion type="multiple" className="w-full space-y-4">
                 
                 {/* Clinical Impression - Collapsible */}
-                <AccordionItem value="impression" className="border-2 border-purple-100 rounded-xl overflow-hidden">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-purple-50 hover:no-underline">
+                <AccordionItem value="impression" className="border border-purple-100 dark:border-purple-900/40 rounded-xl overflow-hidden">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-purple-50/50 dark:hover:bg-purple-900/20 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Filter className="w-5 h-5 text-purple-600" />
-                      <span className="font-semibold text-gray-900">Clinical Impression</span>
-                      <Badge variant="outline" className="ml-2 text-xs border-purple-300 text-purple-700">
-                        Click to expand
-                      </Badge>
+                      <Filter className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">Clinical Impression</span>
                     </div>
                   </AccordionTrigger>
                   
@@ -1987,14 +1981,11 @@ export default function XRay() {
                 </AccordionItem>
                 
                 {/* Recommendations - Collapsible */}
-                <AccordionItem value="recommendations" className="border-2 border-green-100 rounded-xl overflow-hidden">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-green-50 hover:no-underline">
+                <AccordionItem value="recommendations" className="border border-green-100 dark:border-green-900/40 rounded-xl overflow-hidden">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-green-50/50 dark:hover:bg-green-900/20 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Lightbulb className="w-5 h-5 text-green-600" />
-                      <span className="font-semibold text-gray-900">Recommendations</span>
-                      <Badge variant="outline" className="ml-2 text-xs border-green-300 text-green-700">
-                        Click to expand
-                      </Badge>
+                      <Lightbulb className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">Recommendations</span>
                     </div>
                   </AccordionTrigger>
                   
@@ -2173,56 +2164,58 @@ export default function XRay() {
                 />
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-4 border-t border-blue-100 dark:border-blue-900">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    if (selectedXrayExam && reportPatient) {
-                      setShowXrayReport(true);
-                      setTimeout(() => window.print(), 100);
-                    }
-                  }}
-                  className="border-blue-300 text-blue-700 hover:bg-blue-50 min-h-[44px]"
-                  data-testid="button-print-report"
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print Report
-                </Button>
-                
-                <div className="flex gap-3">
+              {/* Sticky Action Footer */}
+              <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 pt-4 pb-2 -mx-6 px-6 mt-6">
+                <div className="flex items-center justify-between">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setResultsModalOpen(false);
-                      setSelectedXrayExam(null);
-                      setUploadedImages([]);
+                      if (selectedXrayExam && reportPatient) {
+                        setShowXrayReport(true);
+                        setTimeout(() => window.print(), 100);
+                      }
                     }}
-                    className="min-h-[44px]"
-                    data-testid="button-cancel-report"
+                    className="border-cyan-300 text-cyan-700 hover:bg-cyan-50 dark:border-cyan-700 dark:text-cyan-400 dark:hover:bg-cyan-900/20 min-h-[44px]"
+                    data-testid="button-print-report"
                   >
-                    Cancel
+                    <Printer className="w-4 h-4 mr-2" />
+                    Print Report
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={updateXrayExamMutation.isPending}
-                    className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white shadow-lg min-h-[44px]"
-                    data-testid="button-save-report"
-                  >
-                    {updateXrayExamMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Report
-                      </>
-                    )}
-                  </Button>
+                  
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setResultsModalOpen(false);
+                        setSelectedXrayExam(null);
+                        setUploadedImages([]);
+                      }}
+                      className="min-h-[44px]"
+                      data-testid="button-cancel-report"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={updateXrayExamMutation.isPending}
+                      className="bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-700 hover:to-teal-600 text-white shadow-lg min-h-[44px]"
+                      data-testid="button-save-report"
+                    >
+                      {updateXrayExamMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          Save Report
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </form>

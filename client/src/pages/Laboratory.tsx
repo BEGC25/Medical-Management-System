@@ -1629,7 +1629,7 @@ return (
       </div>
 
       <Dialog open={resultsModalOpen} onOpenChange={setResultsModalOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden border-0">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden border-0" hideCloseButton>
           <UnifiedModalHeader
             modality="lab"
             title="Laboratory Test Results"
@@ -1882,12 +1882,12 @@ return (
               />
               
               {/* Attachments Accordion - collapsed by default */}
-              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200/70 dark:border-gray-700/70 rounded-lg overflow-hidden">
                 <AccordionItem value="attachments" className="border-0">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:no-underline">
+                  <AccordionTrigger className="px-3 py-2.5 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Attachments (Optional)</span>
+                      <Paperclip className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-normal text-gray-600 dark:text-gray-400">Attachments</span>
                       {selectedLabTest.attachments && parseJSON<any[]>(selectedLabTest.attachments, []).length > 0 && (
                         <Badge variant="outline" className="ml-2 text-xs bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600">
                           {parseJSON<any[]>(selectedLabTest.attachments, []).length}

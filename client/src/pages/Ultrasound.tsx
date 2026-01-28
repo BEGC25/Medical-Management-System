@@ -1264,7 +1264,7 @@ export default function Ultrasound() {
 
       {/* Results/Report Dialog */}
       <Dialog open={resultsModalOpen} onOpenChange={setResultsModalOpen}>
-        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border-0">
+        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border-0 flex flex-col" hideCloseButton>
           {/* Unified Modal Header */}
           {reportPatient && selectedUltrasoundExam && (
             <UnifiedModalHeader
@@ -1280,7 +1280,7 @@ export default function Ultrasound() {
           )}
 
           {/* Scrollable Content Wrapper */}
-          <div className="px-6 max-h-[calc(95vh-180px)] overflow-y-auto">
+          <div className="flex-1 px-6 overflow-y-auto min-h-0">
             {/* VIEW MODE - Unified diagnostic result UI */}
             {viewMode === "view" && selectedUltrasoundExam && (
               <div className="space-y-4 pb-6">
@@ -1410,30 +1410,27 @@ export default function Ultrasound() {
               
             <Form {...resultsForm}>
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6">
-              {/* Attachments Accordion - collapsed by default */}
-              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mb-4">
+              {/* Attachments Accordion - collapsed by default, calmer styling */}
+              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200/70 dark:border-gray-700/70 rounded-lg overflow-hidden mb-4">
                 <AccordionItem value="images" className="border-0">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:no-underline">
+                  <AccordionTrigger className="px-3 py-2.5 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Attachments (Optional)</span>
-                      {uploadedImages.length > 0 && (
-                        <Badge variant="outline" className="ml-2 text-xs bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600">
-                          {uploadedImages.length}
-                        </Badge>
-                      )}
+                      <Paperclip className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
+                        Attachments{uploadedImages.length > 0 ? ` (${uploadedImages.length})` : " (Optional)"}
+                      </span>
                     </div>
                   </AccordionTrigger>
                   
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="p-5 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-2 border-indigo-200 dark:border-indigo-800">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
-                          <Camera className="w-5 h-5 text-white" />
+                  <AccordionContent className="px-3 pb-3">
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50/80 to-purple-50/80 dark:from-violet-950/10 dark:to-purple-950/10 border border-violet-200/60 dark:border-violet-800/60">
+                      <div className="flex items-center gap-2.5 mb-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-md">
+                          <Camera className="w-4 h-4 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-indigo-900 dark:text-indigo-100">Upload Sonographic Images</h3>
-                          <p className="text-xs text-indigo-700 dark:text-indigo-300">Upload images or DICOM files (max 10 files, 20MB each)</p>
+                          <h3 className="text-sm font-semibold text-violet-800 dark:text-violet-200">Upload Sonographic Images</h3>
+                          <p className="text-xs text-violet-600/80 dark:text-violet-400/80">Upload images or DICOM files (max 10 files, 20MB each)</p>
                         </div>
                       </div>
                       
@@ -1571,14 +1568,11 @@ export default function Ultrasound() {
 
                       {/* Quick Findings Templates - COLLAPSIBLE (collapsed by default) */}
                       <Accordion type="single" collapsible defaultValue="" className="mb-4">
-                        <AccordionItem value="templates" className="border-2 border-indigo-100 rounded-xl overflow-hidden">
-                          <AccordionTrigger className="px-4 py-3 hover:bg-indigo-50 hover:no-underline">
+                        <AccordionItem value="templates" className="border border-indigo-100 dark:border-indigo-900/40 rounded-xl overflow-hidden">
+                          <AccordionTrigger className="px-4 py-3 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 hover:no-underline">
                             <div className="flex items-center gap-2">
-                              <Zap className="w-5 h-5 text-indigo-600" />
-                              <span className="font-semibold text-gray-900 dark:text-gray-100">⚡ Quick Findings Templates</span>
-                              <Badge variant="outline" className="ml-2 text-xs border-indigo-300 text-indigo-700 bg-indigo-50">
-                                Click to expand
-                              </Badge>
+                              <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                              <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">Quick Findings Templates</span>
                             </div>
                           </AccordionTrigger>
                           
@@ -1793,14 +1787,11 @@ export default function Ultrasound() {
 
                       {/* Quick Impression Templates - COLLAPSIBLE (collapsed by default) */}
                       <Accordion type="single" collapsible defaultValue="" className="mb-4">
-                        <AccordionItem value="templates" className="border-2 border-purple-100 rounded-xl overflow-hidden">
-                          <AccordionTrigger className="px-4 py-3 hover:bg-purple-50 hover:no-underline">
+                        <AccordionItem value="templates" className="border border-purple-100 dark:border-purple-900/40 rounded-xl overflow-hidden">
+                          <AccordionTrigger className="px-4 py-3 hover:bg-purple-50/50 dark:hover:bg-purple-900/20 hover:no-underline">
                             <div className="flex items-center gap-2">
-                              <Lightbulb className="w-5 h-5 text-purple-600" />
-                              <span className="font-semibold text-gray-900 dark:text-gray-100">💭 Quick Impression Templates</span>
-                              <Badge variant="outline" className="ml-2 text-xs border-purple-300 text-purple-700 bg-purple-50">
-                                Click to expand
-                              </Badge>
+                              <Lightbulb className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                              <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">Quick Impression Templates</span>
                             </div>
                           </AccordionTrigger>
                           
@@ -2238,8 +2229,8 @@ export default function Ultrasound() {
                 />
               </div>
 
-              {/* Action Buttons with Auto-save Indicator */}
-              <div className="pt-4 border-t border-indigo-100 dark:border-indigo-900">
+              {/* Sticky Action Footer */}
+              <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 pt-4 pb-2 -mx-6 px-6 mt-6">
                 {/* Auto-save indicator */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -2265,7 +2256,7 @@ export default function Ultrasound() {
                   
                   {/* Keyboard shortcuts hint */}
                   <div className="flex items-center gap-3 text-xs text-gray-400">
-                    <span className="hidden md:inline">💡 Shortcuts:</span>
+                    <span className="hidden md:inline">Shortcuts:</span>
                     <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs border">Ctrl+S</kbd>
                     <span className="hidden md:inline">Save</span>
                     {hasPreviousReports && (
@@ -2279,17 +2270,17 @@ export default function Ultrasound() {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   {hasPreviousReports && (
                     <Button
                       type="button"
                       variant="outline"
                       onClick={copyFromPreviousReport}
-                      className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 min-h-[44px]"
+                      className="border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20 min-h-[44px]"
                       title="Ctrl+D to copy previous report"
                     >
                       <Copy className="w-4 h-4 mr-2" />
-                      Copy Previous Report
+                      Copy Previous
                     </Button>
                   )}
                   
@@ -2306,7 +2297,7 @@ export default function Ultrasound() {
                           }, 100);
                         }
                       }}
-                      className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 min-h-[44px]"
+                      className="border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20 min-h-[44px]"
                       data-testid="button-print-report"
                     >
                       <Printer className="w-4 h-4 mr-2" />
@@ -2320,7 +2311,6 @@ export default function Ultrasound() {
                         if (selectedUltrasoundExam && reportPatient) {
                           setShowUltrasoundReport(true);
                           setTimeout(() => {
-                            // Trigger print dialog which allows saving as PDF
                             window.print();
                             setTimeout(() => setShowUltrasoundReport(false), 500);
                           }, 100);
@@ -2331,11 +2321,11 @@ export default function Ultrasound() {
                           });
                         }
                       }}
-                      className="border-blue-300 text-blue-700 hover:bg-blue-50 min-h-[44px]"
+                      className="border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20 min-h-[44px]"
                       data-testid="button-export-pdf"
                     >
                       <FileDown className="w-4 h-4 mr-2" />
-                      Export PDF
+                      PDF
                     </Button>
                   </div>
                   
@@ -2357,7 +2347,7 @@ export default function Ultrasound() {
                     <Button
                       type="submit"
                       disabled={updateUltrasoundExamMutation.isPending}
-                      className="bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-700 hover:to-purple-600 text-white shadow-lg min-h-[44px]"
+                      className="bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-white shadow-lg min-h-[44px]"
                       data-testid="button-save-report"
                       title="Ctrl+S to save"
                     >
@@ -2375,7 +2365,7 @@ export default function Ultrasound() {
                   </Button>
                 </div>
               </div>
-            </div>
+              </div>
             </form>
           </Form>
           </>
