@@ -59,7 +59,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { PremiumDrugSelector } from "@/components/pharmacy/PremiumDrugSelector";
-import { getClinicDayKey } from "@/lib/date-utils";
+import { getClinicDayKey, formatClinicDay } from "@/lib/date-utils";
 import PharmacyInventoryHelp from "@/components/PharmacyInventoryHelp";
 import { DateFilter, DateFilterPreset } from "@/components/pharmacy/DateFilter";
 import { FilterBar, FilterConfig, ActiveFilter } from "@/components/pharmacy/FilterBar";
@@ -708,7 +708,7 @@ export default function PharmacyInventory() {
       toast({
         title: "✅ Stock Received Successfully",
         description: drug 
-          ? `${drug.name}: ${formatDrugQuantity(newBatch.quantityOnHand, drug.form)} received (Expires: ${new Date(newBatch.expiryDate).toLocaleDateString()})` 
+          ? `${drug.name}: ${formatDrugQuantity(newBatch.quantityOnHand, drug.form)} received (Expires: ${formatClinicDay(newBatch.expiryDate)})` 
           : "New stock has been received and added to inventory.",
       });
       
@@ -1098,7 +1098,7 @@ export default function PharmacyInventory() {
           form: drug.form,
           stockOnHand: drug.stockOnHand,
           currentPrice: currentPrice ? Math.round(currentPrice) : "-",
-          nearestExpiry: nearestExpiry ? new Date(nearestExpiry).toLocaleDateString() : "-",
+          nearestExpiry: nearestExpiry ? formatClinicDay(nearestExpiry) : "-",
           status: drug.stockOnHand === 0 ? "Out of Stock" : drug.stockOnHand <= drug.reorderLevel ? "LOW STOCK" : "In Stock",
         };
       });
@@ -1137,7 +1137,7 @@ export default function PharmacyInventory() {
         quantity: entry.quantity,
         value: Math.round(entry.totalValue || 0),
         performedBy: entry.performedBy,
-        date: new Date(entry.createdAt).toLocaleDateString(),
+        date: formatClinicDay(entry.createdAt),
       }));
       columnLabels = {
         transactionId: "Transaction ID",
@@ -1807,7 +1807,7 @@ export default function PharmacyInventory() {
                           {currentPrice ? `${Math.round(currentPrice).toLocaleString()}` : '-'}
                         </TableCell>
                         <TableCell className="text-gray-700 dark:text-gray-300 py-5">
-                          {nearestExpiry ? new Date(nearestExpiry).toLocaleDateString() : '-'}
+                          {nearestExpiry ? formatClinicDay(nearestExpiry) : '-'}
                         </TableCell>
                         <TableCell className="py-5">
                           {isOutOfStock ? (
@@ -2452,7 +2452,7 @@ export default function PharmacyInventory() {
                             <div>
                               <span className="text-gray-600 dark:text-gray-400">Expiry:</span>
                               <span className={`ml-2 font-semibold ${isExpired ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                                {expiryDate.toLocaleDateString()}
+                                {formatClinicDay(expiryDate.toISOString())}
                               </span>
                             </div>
                           </div>
@@ -2637,7 +2637,7 @@ export default function PharmacyInventory() {
                           {(entry.totalValue || 0) > 0 ? '+' : ''}{Math.round(entry.totalValue || 0).toLocaleString()}
                         </TableCell>
                         <TableCell className="text-gray-700 dark:text-gray-300 py-5">{entry.performedBy}</TableCell>
-                        <TableCell className="text-gray-700 dark:text-gray-300 py-5">{new Date(entry.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-gray-700 dark:text-gray-300 py-5">{formatClinicDay(entry.createdAt)}</TableCell>
                       </TableRow>
                       );
                     })}
@@ -3068,7 +3068,7 @@ export default function PharmacyInventory() {
                     <div className="bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
                       <span className="text-gray-600 dark:text-gray-400">Nearest Expiry:</span>
                       <span className="ml-2 font-semibold text-amber-600 dark:text-amber-400">
-                        {nearestExpiry ? new Date(nearestExpiry.expiryDate).toLocaleDateString() : 'N/A'}
+                        {nearestExpiry ? formatClinicDay(nearestExpiry.expiryDate) : 'N/A'}
                       </span>
                     </div>
                     <div className="bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg">
@@ -3503,7 +3503,7 @@ export default function PharmacyInventory() {
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <span className={isExpired ? "text-red-600 dark:text-red-400 font-semibold" : isExpiringSoon ? "text-amber-600 dark:text-amber-400 font-semibold" : ""}>
-                                  {expiryDate.toLocaleDateString()}
+                                  {formatClinicDay(expiryDate.toISOString())}
                                 </span>
                                 {isExpired ? (
                                   <Badge className="bg-red-600 text-white text-xs">EXPIRED</Badge>
@@ -3516,7 +3516,7 @@ export default function PharmacyInventory() {
                             <TableCell className="text-right font-mono">{Math.round(batch.unitCost).toLocaleString()}</TableCell>
                             <TableCell>{batch.supplier || 'N/A'}</TableCell>
                             <TableCell className="text-sm text-gray-600 dark:text-gray-400">
-                              {new Date(batch.receivedAt).toLocaleDateString()}
+                              {formatClinicDay(batch.receivedAt)}
                             </TableCell>
                           </TableRow>
                         );
