@@ -1644,7 +1644,7 @@ return (
           {/* VIEW MODE - Unified diagnostic result UI */}
           {selectedLabTest && viewMode === "view" && (
             <div className="space-y-4 px-6 max-h-[calc(90vh-180px)] overflow-y-auto">
-              {/* Summary Card - Single source of truth for patient/order info AND tests ordered */}
+              {/* Summary Card - Single source of truth for patient/order info */}
               {reportPatient && (() => {
                 // Compute abnormal/critical counts for SummaryCard
                 const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
@@ -1674,12 +1674,17 @@ return (
                     completedDate={selectedLabTest.completedDate}
                     abnormalCount={abnormalCount}
                     criticalCount={criticalCount}
-                    tests={parseJSON<string[]>(selectedLabTest.tests, [])}
                   />
                 );
               })()}
 
-              {/* Laboratory Results Section - without duplicate summary header */}
+              {/* Tests Ordered Row - compact with +N more */}
+              <TestsOrderedRow
+                modality="lab"
+                tests={parseJSON<string[]>(selectedLabTest.tests, [])}
+              />
+
+              {/* Laboratory Results Section */}
               <div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Laboratory Results</h3>
                 
@@ -1687,8 +1692,43 @@ return (
                   const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
                   const entries = Object.entries(results);
                   
+                  // Calculate summary counts
+                  let criticalCount = 0;
+                  let abnormalCount = 0;
+                  let normalCount = 0;
+                  
+                  entries.forEach(([testName, testData]) => {
+                    const severity = getTestSeverity(testName, testData, reportPatient || undefined);
+                    if (severity === "critical") criticalCount++;
+                    else if (severity === "abnormal") abnormalCount++;
+                    else normalCount++;
+                  });
+                  
                   return (
                     <>
+                      {/* Summary Header */}
+                      {entries.length > 0 && (
+                        <div className="flex items-center gap-3 mb-6 p-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                          <div className="flex items-center flex-wrap gap-2">
+                            {criticalCount > 0 && (
+                              <span className="flex items-center gap-1 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-sm font-semibold">
+                                <AlertCircle className="w-4 h-4" /> {criticalCount} Critical
+                              </span>
+                            )}
+                            {abnormalCount > 0 && (
+                              <span className="flex items-center gap-1 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-sm font-semibold">
+                                <AlertTriangle className="w-4 h-4" /> {abnormalCount} Abnormal
+                              </span>
+                            )}
+                            {normalCount > 0 && (
+                              <span className="flex items-center gap-1 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-semibold">
+                                <CheckCircle className="w-4 h-4" /> {normalCount} Normal
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
                       {/* Premium Test Cards */}
                       <div className="space-y-4">
                         {entries.map(([testName, testData]) => {
@@ -1847,18 +1887,22 @@ return (
                   priority={(selectedLabTest.priority as "routine" | "urgent" | "stat") || "routine"}
                   paymentStatus={(selectedLabTest.paymentStatus as "paid" | "unpaid") || "unpaid"}
                   requestedDate={selectedLabTest.requestedDate}
-                tests={parseJSON<string[]>(selectedLabTest.tests, [])}
                 />
               )}
 
+              {/* Tests Ordered Row */}
+              <TestsOrderedRow
+                modality="lab"
+                tests={parseJSON<string[]>(selectedLabTest.tests, [])}
+              />
               
-              {/* Attachments Accordion - collapsed by default, quiet styling */}
-              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200/50 dark:border-gray-700/50 rounded-lg overflow-hidden">
+              {/* Attachments Accordion - collapsed by default */}
+              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200/70 dark:border-gray-700/70 rounded-lg overflow-hidden">
                 <AccordionItem value="attachments" className="border-0">
-                  <AccordionTrigger className="px-3 py-2 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:no-underline">
+                  <AccordionTrigger className="px-3 py-2.5 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Paperclip className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
-                      <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
+                      <Paperclip className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
                         Attachments
                         {selectedLabTest.attachments && parseJSON<any[]>(selectedLabTest.attachments, []).length > 0 
                           ? ` (${parseJSON<any[]>(selectedLabTest.attachments, []).length})`
@@ -1866,9 +1910,13 @@ return (
                       </span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="px-3 pb-3">
-                    <div className="p-3 border border-gray-200/70 dark:border-gray-700/70 rounded-lg bg-gray-50/50 dark:bg-gray-800/20">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="p-4 border border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                      <h5 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center">
+                        <Camera className="w-4 h-4 mr-2" />
+                        Lab Printout Photos
+                      </h5>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
                         Upload photos of CBC, chemistry, or other machine printouts to reduce manual typing.
                       </p>
 
