@@ -138,6 +138,16 @@ export default function ResultDrawer(props: {
   const completed = data?.status === "completed";
   const orderLineId = data?.orderLine?.id ?? data?.orderLineId ?? data?.orderId;
 
+  // LAB specifics
+  const tests = React.useMemo<string[]>(
+    () => parseJSON<string[]>(data?.tests, []),
+    [data?.tests]
+  );
+  const results = React.useMemo<Record<string, Record<string, string>>>(
+    () => parseJSON<Record<string, Record<string, string>>>(data?.results, {}),
+    [data?.results]
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Wider modal on desktop: max-w-5xl for more content visibility */}
