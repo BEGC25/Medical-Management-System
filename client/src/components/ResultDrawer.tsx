@@ -138,41 +138,6 @@ export default function ResultDrawer(props: {
   const completed = data?.status === "completed";
   const orderLineId = data?.orderLine?.id ?? data?.orderLineId ?? data?.orderId;
 
-  // LAB specifics
-  const tests = React.useMemo<string[]>(
-    () => parseJSON<string[]>(data?.tests, Array.isArray(data?.tests) ? data?.tests : []),
-    [data]
-  );
-  const results = React.useMemo<Record<string, Record<string, string>>>(
-    () => parseJSON<Record<string, Record<string, string>>>(data?.results, {}),
-    [data]
-  );
-
-  const copySummary = () => {
-    if (!props.onCopyToNotes) return;
-    let txt = "";
-    if (kind === "lab") {
-      txt += `Lab (${data?.category ?? "—"} ${data?.testId ?? ""}):\n`;
-      for (const [panel, fields] of Object.entries(results || {})) {
-        txt += `• ${panel}\n`;
-        for (const [name, value] of Object.entries(fields || {})) {
-          txt += `   - ${name}: ${value}\n`;
-        }
-      }
-    } else if (kind === "xray") {
-      txt += `X-Ray (${data?.examType ?? data?.bodyPart ?? ""} ${data?.examId ?? ""}):\n`;
-      if (data?.viewDescriptions) txt += `View Descriptions: ${data.viewDescriptions}\n`;
-      if (data?.findings) txt += `Findings: ${data.findings}\n`;
-      if (data?.impression) txt += `Impression: ${data.impression}\n`;
-      if (data?.recommendations) txt += `Recommendations: ${data.recommendations}\n`;
-    } else if (kind === "ultrasound") {
-      txt += `Ultrasound (${data?.examType ?? ""} ${data?.examId ?? ""}):\n`;
-      if (data?.findings) txt += `Findings: ${data.findings}\n`;
-      if (data?.impression) txt += `Impression: ${data.impression}\n`;
-    }
-    props.onCopyToNotes?.(txt.trim());
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Wider modal on desktop: max-w-5xl for more content visibility */}
@@ -211,6 +176,7 @@ export default function ResultDrawer(props: {
                         checked={includeClinicalInterpretation}
                         onChange={(e) => setIncludeClinicalInterpretation(e.target.checked)}
                         className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                        aria-label="Include clinical interpretation in print"
                       />
                       <span className="font-medium">Include Interpretation</span>
                     </label>

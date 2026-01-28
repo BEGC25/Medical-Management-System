@@ -164,8 +164,8 @@ export function LabReportPrint({
   const tests = parseJSON<string[]>(labTest.tests, []);
   const results = parseJSON<Record<string, Record<string, string>>>(labTest.results, {});
 
-  // kept for future use (not printed in this layout)
-  const _interpretation = includeInterpretation
+  // Clinical interpretation
+  const interpretation = includeInterpretation
     ? interpretLabResults(results, patient ?? undefined)
     : { criticalFindings: [] as string[], warnings: [] as string[] };
 
@@ -469,6 +469,37 @@ export function LabReportPrint({
                     Technician Notes
                   </div>
                   <p className="mt-2 text-[13px] text-slate-800 leading-relaxed">{technicianNotes}</p>
+                </div>
+              )}
+
+              {/* Clinical Interpretation - only when includeInterpretation is true */}
+              {includeInterpretation && (interpretation.criticalFindings.length > 0 || interpretation.warnings.length > 0) && (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 avoid-break">
+                  <div className="text-[11px] uppercase tracking-wider text-amber-700 font-semibold">
+                    Clinical Interpretation
+                  </div>
+                  
+                  {interpretation.criticalFindings.length > 0 && (
+                    <div className="mt-2">
+                      <div className="text-[12px] font-semibold text-red-700">Critical Findings:</div>
+                      <ul className="mt-1 ml-4 list-disc text-[13px] text-red-600 space-y-1">
+                        {interpretation.criticalFindings.map((finding, idx) => (
+                          <li key={idx}>{finding}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {interpretation.warnings.length > 0 && (
+                    <div className={interpretation.criticalFindings.length > 0 ? "mt-3" : "mt-2"}>
+                      <div className="text-[12px] font-semibold text-amber-700">Warnings:</div>
+                      <ul className="mt-1 ml-4 list-disc text-[13px] text-amber-700 space-y-1">
+                        {interpretation.warnings.map((warning, idx) => (
+                          <li key={idx}>{warning}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
 
