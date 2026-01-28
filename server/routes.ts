@@ -1816,12 +1816,24 @@ router.post("/api/payments", async (req: any, res) => {
                 }
               }
             } else if (item.relatedType === "xray_exam") {
+              if (!item.relatedId) {
+                console.error("Missing relatedId for xray_exam payment item:", item);
+                throw new Error("X-ray exam ID is missing from payment item");
+              }
               await storage.updateXrayExam(item.relatedId, { paymentStatus: "paid" });
             } else if (item.relatedType === "ultrasound_exam") {
+              if (!item.relatedId) {
+                console.error("Missing relatedId for ultrasound_exam payment item:", item);
+                throw new Error("Ultrasound exam ID is missing from payment item");
+              }
               await storage.updateUltrasoundExam(item.relatedId, {
                 paymentStatus: "paid",
               });
             } else if (item.relatedType === "pharmacy_order") {
+              if (!item.relatedId) {
+                console.error("Missing relatedId for pharmacy_order payment item:", item);
+                throw new Error("Pharmacy order ID is missing from payment item");
+              }
               await storage.updatePharmacyOrder(item.relatedId, {
                 paymentStatus: "paid",
               });
@@ -1836,7 +1848,11 @@ router.post("/api/payments", async (req: any, res) => {
     res.status(201).json(payment);
   } catch (error) {
     console.error("Error creating payment:", error);
-    res.status(500).json({ error: "Failed to create payment" });
+    const errorMessage = error instanceof Error ? error.message : "Failed to create payment";
+    res.status(500).json({ 
+      error: "Failed to create payment",
+      details: errorMessage
+    });
   }
 });
 

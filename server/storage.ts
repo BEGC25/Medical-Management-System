@@ -968,10 +968,18 @@ export class MemStorage implements IStorage {
   }
 
   async updateLabTest(testId: string, data: Partial<schema.LabTest>): Promise<schema.LabTest> {
+    if (!testId) {
+      throw new Error("Lab test ID is required");
+    }
+    
     const [labTest] = await db.update(labTests)
       .set(data)
       .where(eq(labTests.testId, testId))
       .returning();
+
+    if (!labTest) {
+      throw new Error(`Lab test not found: ${testId}`);
+    }
 
     return labTest;
   }
@@ -1084,10 +1092,18 @@ export class MemStorage implements IStorage {
   }
 
   async updateXrayExam(examId: string, data: Partial<schema.XrayExam>): Promise<schema.XrayExam> {
+    if (!examId) {
+      throw new Error("X-ray exam ID is required");
+    }
+    
     const [xrayExam] = await db.update(xrayExams)
       .set(data)
       .where(eq(xrayExams.examId, examId))
       .returning();
+
+    if (!xrayExam) {
+      throw new Error(`X-ray exam not found: ${examId}`);
+    }
 
     return xrayExam;
   }
@@ -1179,10 +1195,18 @@ export class MemStorage implements IStorage {
   }
 
   async updateUltrasoundExam(examId: string, data: Partial<schema.UltrasoundExam>): Promise<schema.UltrasoundExam> {
+    if (!examId) {
+      throw new Error("Ultrasound exam ID is required");
+    }
+    
     const [ultrasoundExam] = await db.update(ultrasoundExams)
       .set(data)
       .where(eq(ultrasoundExams.examId, examId))
       .returning();
+
+    if (!ultrasoundExam) {
+      throw new Error(`Ultrasound exam not found: ${examId}`);
+    }
 
     return ultrasoundExam;
   }
@@ -2382,10 +2406,18 @@ export class MemStorage implements IStorage {
   }
 
   async updatePharmacyOrder(orderId: string, data: Partial<schema.PharmacyOrder>): Promise<schema.PharmacyOrder> {
+    if (!orderId) {
+      throw new Error("Pharmacy order ID is required");
+    }
+    
     const [pharmacyOrder] = await db.update(pharmacyOrders)
       .set(data)
       .where(eq(pharmacyOrders.orderId, orderId))
       .returning();
+
+    if (!pharmacyOrder) {
+      throw new Error(`Pharmacy order not found: ${orderId}`);
+    }
 
     return pharmacyOrder;
   }
