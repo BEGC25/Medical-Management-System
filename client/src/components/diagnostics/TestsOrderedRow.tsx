@@ -22,6 +22,47 @@ interface TestsOrderedRowProps {
 }
 
 /**
+ * Shorten verbose view descriptions to compact format
+ * "AP and lateral view obtained" → "Views: AP + Lateral"
+ * "PA and lateral views" → "Views: PA + Lateral"
+ */
+function shortenViewDescription(views: string): string {
+  const lowerViews = views.toLowerCase();
+  
+  // Check for common patterns and convert to compact format
+  if (lowerViews.includes("ap") && lowerViews.includes("lateral")) {
+    return "Views: AP + Lateral";
+  }
+  if (lowerViews.includes("pa") && lowerViews.includes("lateral")) {
+    return "Views: PA + Lateral";
+  }
+  if (lowerViews.includes("oblique") && lowerViews.includes("lateral")) {
+    return "Views: Oblique + Lateral";
+  }
+  if (lowerViews.includes("anterior") && lowerViews.includes("posterior")) {
+    return "Views: AP";
+  }
+  
+  // If the string is long (sentence-like), try to extract key view terms
+  if (views.length > 30) {
+    const viewTerms: string[] = [];
+    if (lowerViews.includes("ap")) viewTerms.push("AP");
+    if (lowerViews.includes("pa")) viewTerms.push("PA");
+    if (lowerViews.includes("lateral")) viewTerms.push("Lateral");
+    if (lowerViews.includes("oblique")) viewTerms.push("Oblique");
+    if (lowerViews.includes("axial")) viewTerms.push("Axial");
+    if (lowerViews.includes("lordotic")) viewTerms.push("Lordotic");
+    
+    if (viewTerms.length > 0) {
+      return `Views: ${viewTerms.join(" + ")}`;
+    }
+  }
+  
+  // Return as-is if can't shorten
+  return views;
+}
+
+/**
  * TestsOrderedRow - Compact row showing what tests/exams are ordered.
  * 
  * For Lab: shows first 3 chips then "+N more" popover when many tests exist.
@@ -42,7 +83,9 @@ export function TestsOrderedRow({
       return tests;
     }
     if (modality === "xray") {
-      const parts = [examType, bodyPart, views].filter((x): x is string => Boolean(x));
+      // Shorten views if they're verbose
+      const shortenedViews = views ? shortenViewDescription(views) : null;
+      const parts = [examType, bodyPart, shortenedViews].filter((x): x is string => Boolean(x));
       return parts;
     }
     if (modality === "ultrasound") {

@@ -1264,7 +1264,7 @@ export default function Ultrasound() {
 
       {/* Results/Report Dialog */}
       <Dialog open={resultsModalOpen} onOpenChange={setResultsModalOpen}>
-        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border-0">
+        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border-0 flex flex-col" hideCloseButton>
           {/* Unified Modal Header */}
           {reportPatient && selectedUltrasoundExam && (
             <UnifiedModalHeader
@@ -1280,28 +1280,57 @@ export default function Ultrasound() {
           )}
 
           {/* Scrollable Content Wrapper */}
-          <div className="px-6 max-h-[calc(95vh-180px)] overflow-y-auto">
+          <div className="flex-1 px-6 overflow-y-auto min-h-0">
             {/* VIEW MODE - Unified diagnostic result UI */}
             {viewMode === "view" && selectedUltrasoundExam && (
               <div className="space-y-4 pb-6">
               {/* Summary Card - Single source of truth for patient/order info */}
-              {reportPatient && (
-                <SummaryCard
-                  modality="ultrasound"
-                  patient={{
-                    name: fullName(reportPatient),
-                    patientId: reportPatient.patientId,
-                    age: reportPatient.age,
-                    gender: reportPatient.gender,
-                    phone: reportPatient.phoneNumber,
-                  }}
-                  orderId={selectedUltrasoundExam.examId || ""}
-                  priority={"routine"}
-                  paymentStatus={(selectedUltrasoundExam.paymentStatus as "paid" | "unpaid") || "unpaid"}
-                  requestedDate={selectedUltrasoundExam.requestedDate}
-                  completedDate={selectedUltrasoundExam.reportDate}
-                />
-              )}
+              {reportPatient && (() => {
+                // Determine severity from impression for Ultrasound
+                const imp = (selectedUltrasoundExam.impression || "").toLowerCase();
+                let criticalCount = 0;
+                let abnormalCount = 0;
+                
+                // Check for negative patterns that should NOT trigger critical/abnormal
+                const hasNegation = imp.includes("no mass") || imp.includes("no tumor") || 
+                  imp.includes("no acute") || imp.includes("no abnormal") || imp.includes("no cyst") ||
+                  imp.includes("without mass") || imp.includes("without tumor") ||
+                  imp.includes("negative for") || imp.includes("no evidence of") || imp.includes("unremarkable");
+                
+                // Only flag as critical if NOT negated
+                if (!hasNegation && (
+                    imp.includes("mass") || imp.includes("tumor") || imp.includes("malignancy") || 
+                    imp.includes("acute") || imp.includes("emergency") || imp.includes("urgent") ||
+                    imp.includes("ectopic") || imp.includes("rupture") || imp.includes("abscess") ||
+                    imp.includes("infarction") || imp.includes("thrombus"))) {
+                  criticalCount = 1;
+                } else if (!hasNegation && (
+                    imp.includes("cyst") || imp.includes("polyp") || imp.includes("fibroid") ||
+                    imp.includes("mild") || imp.includes("borderline") || imp.includes("follow") ||
+                    imp.includes("correlation") || imp.includes("enlarged") || imp.includes("suspicious"))) {
+                  abnormalCount = 1;
+                }
+                
+                return (
+                  <SummaryCard
+                    modality="ultrasound"
+                    patient={{
+                      name: fullName(reportPatient),
+                      patientId: reportPatient.patientId,
+                      age: reportPatient.age,
+                      gender: reportPatient.gender,
+                      phone: reportPatient.phoneNumber,
+                    }}
+                    orderId={selectedUltrasoundExam.examId || ""}
+                    priority={"routine"}
+                    paymentStatus={(selectedUltrasoundExam.paymentStatus as "paid" | "unpaid") || "unpaid"}
+                    requestedDate={selectedUltrasoundExam.requestedDate}
+                    completedDate={selectedUltrasoundExam.reportDate}
+                    abnormalCount={abnormalCount}
+                    criticalCount={criticalCount}
+                  />
+                );
+              })()}
 
               {/* Tests Ordered Row - compact exam info */}
               <TestsOrderedRow
@@ -1410,30 +1439,27 @@ export default function Ultrasound() {
               
             <Form {...resultsForm}>
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6">
-              {/* Attachments Accordion - collapsed by default */}
-              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mb-4">
+              {/* Attachments Accordion - collapsed by default, calmer styling */}
+              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200/70 dark:border-gray-700/70 rounded-lg overflow-hidden mb-4">
                 <AccordionItem value="images" className="border-0">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:no-underline">
+                  <AccordionTrigger className="px-3 py-2.5 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Attachments (Optional)</span>
-                      {uploadedImages.length > 0 && (
-                        <Badge variant="outline" className="ml-2 text-xs bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600">
-                          {uploadedImages.length}
-                        </Badge>
-                      )}
+                      <Paperclip className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
+                        Attachments{uploadedImages.length > 0 ? ` (${uploadedImages.length})` : " (Optional)"}
+                      </span>
                     </div>
                   </AccordionTrigger>
                   
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="p-5 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-2 border-indigo-200 dark:border-indigo-800">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
-                          <Camera className="w-5 h-5 text-white" />
+                  <AccordionContent className="px-3 pb-3">
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50/80 to-purple-50/80 dark:from-violet-950/10 dark:to-purple-950/10 border border-violet-200/60 dark:border-violet-800/60">
+                      <div className="flex items-center gap-2.5 mb-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-md">
+                          <Camera className="w-4 h-4 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-indigo-900 dark:text-indigo-100">Upload Sonographic Images</h3>
-                          <p className="text-xs text-indigo-700 dark:text-indigo-300">Upload images or DICOM files (max 10 files, 20MB each)</p>
+                          <h3 className="text-sm font-semibold text-violet-800 dark:text-violet-200">Upload Sonographic Images</h3>
+                          <p className="text-xs text-violet-600/80 dark:text-violet-400/80">Upload images or DICOM files (max 10 files, 20MB each)</p>
                         </div>
                       </div>
                       
@@ -1571,14 +1597,11 @@ export default function Ultrasound() {
 
                       {/* Quick Findings Templates - COLLAPSIBLE (collapsed by default) */}
                       <Accordion type="single" collapsible defaultValue="" className="mb-4">
-                        <AccordionItem value="templates" className="border-2 border-indigo-100 rounded-xl overflow-hidden">
-                          <AccordionTrigger className="px-4 py-3 hover:bg-indigo-50 hover:no-underline">
+                        <AccordionItem value="templates" className="border border-indigo-100 dark:border-indigo-900/40 rounded-xl overflow-hidden">
+                          <AccordionTrigger className="px-4 py-3 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 hover:no-underline">
                             <div className="flex items-center gap-2">
-                              <Zap className="w-5 h-5 text-indigo-600" />
-                              <span className="font-semibold text-gray-900 dark:text-gray-100">⚡ Quick Findings Templates</span>
-                              <Badge variant="outline" className="ml-2 text-xs border-indigo-300 text-indigo-700 bg-indigo-50">
-                                Click to expand
-                              </Badge>
+                              <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                              <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">Quick Findings Templates</span>
                             </div>
                           </AccordionTrigger>
                           
@@ -1596,13 +1619,13 @@ export default function Ultrasound() {
                           <div>
                             <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">Pregnancy Status:</label>
                             <div className="flex flex-wrap gap-2">
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Intrauterine pregnancy visualized.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Intrauterine pregnancy visualized.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 <Check className="w-3 h-3 mr-1" /> IUP Present
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Single live intrauterine pregnancy. Fetal cardiac activity present.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Single live intrauterine pregnancy. Fetal cardiac activity present.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 <Heart className="w-3 h-3 mr-1" /> Single IUP + FCA
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Twin gestation identified. Both fetuses viable with cardiac activity.")} className="border-blue-300 hover:bg-blue-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Twin gestation identified. Both fetuses viable with cardiac activity.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 👯 Twin Gestation
                               </Button>
                             </div>
@@ -1611,10 +1634,10 @@ export default function Ultrasound() {
                           <div>
                             <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">Fetal Biometry:</label>
                             <div className="flex flex-wrap gap-2">
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Fetal biometry consistent with stated gestational age.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Fetal biometry consistent with stated gestational age.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 ✅ Normal Growth
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("BPD, HC, AC, FL measurements obtained and within normal limits.")} className="border-blue-300 hover:bg-blue-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("BPD, HC, AC, FL measurements obtained and within normal limits.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 📏 Biometry WNL
                               </Button>
                             </div>
@@ -1623,16 +1646,16 @@ export default function Ultrasound() {
                           <div>
                             <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">Placenta & Amniotic Fluid:</label>
                             <div className="flex flex-wrap gap-2">
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Placenta anterior/posterior/fundal in location. No evidence of placenta previa.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Placenta anterior/posterior/fundal in location. No evidence of placenta previa.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 ✅ Normal Placenta
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Amniotic fluid volume appears adequate/normal.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Amniotic fluid volume appears adequate/normal.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 💧 AFI Normal
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Polyhydramnios noted - increased amniotic fluid volume.")} className="border-amber-300 hover:bg-amber-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Polyhydramnios noted - increased amniotic fluid volume.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 ⚠️ Polyhydramnios
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Oligohydramnios - reduced amniotic fluid volume.")} className="border-red-300 hover:bg-red-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Oligohydramnios - reduced amniotic fluid volume.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 ⚠️ Oligohydramnios
                               </Button>
                             </div>
@@ -1653,13 +1676,13 @@ export default function Ultrasound() {
                           <div>
                             <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">Liver:</label>
                             <div className="flex flex-wrap gap-2">
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Liver normal in size and echogenicity. No focal lesions.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Liver normal in size and echogenicity. No focal lesions.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 <Check className="w-3 h-3 mr-1" /> Normal Liver
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Hepatomegaly noted. Liver size increased.")} className="border-orange-300 hover:bg-orange-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Hepatomegaly noted. Liver size increased.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 Hepatomegaly
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Fatty infiltration of liver - increased echogenicity.")} className="border-amber-300 hover:bg-amber-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Fatty infiltration of liver - increased echogenicity.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 Fatty Liver
                               </Button>
                             </div>
@@ -1668,13 +1691,13 @@ export default function Ultrasound() {
                           <div>
                             <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">Gallbladder:</label>
                             <div className="flex flex-wrap gap-2">
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Gallbladder normal. No stones or wall thickening.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Gallbladder normal. No stones or wall thickening.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 <Check className="w-3 h-3 mr-1" /> Normal GB
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Cholelithiasis - gallstones present.")} className="border-red-300 hover:bg-red-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Cholelithiasis - gallstones present.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 💎 Gallstones
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Cholecystitis - gallbladder wall thickening and pericholecystic fluid.")} className="border-red-300 hover:bg-red-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Cholecystitis - gallbladder wall thickening and pericholecystic fluid.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 🔥 Cholecystitis
                               </Button>
                             </div>
@@ -1683,13 +1706,13 @@ export default function Ultrasound() {
                           <div>
                             <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">Kidneys:</label>
                             <div className="flex flex-wrap gap-2">
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Both kidneys normal in size and echotexture. No hydronephrosis.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Both kidneys normal in size and echotexture. No hydronephrosis.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 <Check className="w-3 h-3 mr-1" /> Normal Kidneys
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Renal calculus identified. Shadowing stone present.")} className="border-red-300 hover:bg-red-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Renal calculus identified. Shadowing stone present.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 💎 Kidney Stone
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Hydronephrosis - dilated renal collecting system.")} className="border-orange-300 hover:bg-orange-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Hydronephrosis - dilated renal collecting system.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 ⚠️ Hydronephrosis
                               </Button>
                             </div>
@@ -1710,10 +1733,10 @@ export default function Ultrasound() {
                           <div>
                             <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">LV Function:</label>
                             <div className="flex flex-wrap gap-2">
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Left ventricular systolic function normal. EF estimated 55-60%.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Left ventricular systolic function normal. EF estimated 55-60%.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 <Heart className="w-3 h-3 mr-1" /> Normal EF
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Reduced LV systolic function. EF estimated 35-40%.")} className="border-red-300 hover:bg-red-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Reduced LV systolic function. EF estimated 35-40%.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 ⚠️ Reduced EF
                               </Button>
                             </div>
@@ -1722,10 +1745,10 @@ export default function Ultrasound() {
                           <div>
                             <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">Valves:</label>
                             <div className="flex flex-wrap gap-2">
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Mitral valve normal. No significant regurgitation or stenosis.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Mitral valve normal. No significant regurgitation or stenosis.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 <Check className="w-3 h-3 mr-1" /> Normal MV
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Aortic valve trileaflet and opens well. No AS or AR.")} className="border-green-300 hover:bg-green-50 text-xs">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addFinding("Aortic valve trileaflet and opens well. No AS or AR.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs">
                                 <Check className="w-3 h-3 mr-1" /> Normal AV
                               </Button>
                             </div>
@@ -1744,9 +1767,9 @@ export default function Ultrasound() {
               {/* 💭 CLINICAL IMPRESSION - Always Visible */}
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <Filter className="w-5 h-5 text-purple-600" />
+                  <Filter className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Clinical Impression</h3>
-                  <Badge className="ml-2 text-xs bg-purple-600 text-white">
+                  <Badge className="ml-2 text-xs bg-violet-600 text-white">
                     Required
                   </Badge>
                 </div>
@@ -1767,7 +1790,7 @@ export default function Ultrasound() {
                             size="sm" 
                             variant="outline"
                             onClick={() => startVoiceInput('impression')}
-                            className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                            className="border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
                           >
                             <Mic className={`w-3 h-3 mr-1 ${isRecording.impression ? 'animate-pulse text-red-500' : ''}`} />
                             {isRecording.impression ? 'Stop' : 'Dictate'}
@@ -1784,54 +1807,74 @@ export default function Ultrasound() {
                             }}
                             rows={6}
                             placeholder="Summary diagnosis and impression..."
-                            className="focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200"
+                            className="focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all duration-200"
                             data-testid="textarea-impression"
                           />
                         </FormControl>
                         <FormMessage />
                       </div>
 
-                      {/* Quick Impression Templates - COLLAPSIBLE (collapsed by default) */}
+                      {/* Top 6 Quick Templates - Always visible, neutral styling */}
+                      <div className="mb-4">
+                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2 block">
+                          Quick Templates:
+                        </label>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
+                          <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal ultrasound examination. No abnormalities detected.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                            <span className="w-2 h-2 rounded-full bg-green-500 mr-2 flex-shrink-0"></span>Normal Study
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings consistent with cholelithiasis. Multiple gallstones visualized.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 mr-2 flex-shrink-0"></span>Gallstones
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Hepatic steatosis (fatty liver). Increased echogenicity consistent with fatty infiltration.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 mr-2 flex-shrink-0"></span>Fatty Liver
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Both kidneys normal in size and echotexture. No hydronephrosis or stones.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                            <span className="w-2 h-2 rounded-full bg-green-500 mr-2 flex-shrink-0"></span>Normal Kidneys
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Simple ovarian cyst - benign appearance. Follow-up recommended.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                            <span className="w-2 h-2 rounded-full bg-blue-500 mr-2 flex-shrink-0"></span>Ovarian Cyst
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings require further evaluation or correlation with clinical presentation.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                            <span className="w-2 h-2 rounded-full bg-orange-500 mr-2 flex-shrink-0"></span>Further Eval
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* All Templates - COLLAPSIBLE (collapsed by default) */}
                       <Accordion type="single" collapsible defaultValue="" className="mb-4">
-                        <AccordionItem value="templates" className="border-2 border-purple-100 rounded-xl overflow-hidden">
-                          <AccordionTrigger className="px-4 py-3 hover:bg-purple-50 hover:no-underline">
+                        <AccordionItem value="templates" className="border border-gray-200/70 dark:border-gray-700/70 rounded-xl overflow-hidden">
+                          <AccordionTrigger className="px-4 py-2.5 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:no-underline">
                             <div className="flex items-center gap-2">
-                              <Lightbulb className="w-5 h-5 text-purple-600" />
-                              <span className="font-semibold text-gray-900 dark:text-gray-100">💭 Quick Impression Templates</span>
-                              <Badge variant="outline" className="ml-2 text-xs border-purple-300 text-purple-700 bg-purple-50">
-                                Click to expand
-                              </Badge>
+                              <Lightbulb className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                              <span className="font-medium text-gray-600 dark:text-gray-400 text-sm">All Templates (30+ Options)</span>
                             </div>
                           </AccordionTrigger>
                           
                           <AccordionContent className="px-4 pb-4">
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 italic">
-                            💡 <strong>Impression:</strong> Your diagnostic conclusion based on the findings (what it means clinically, the diagnosis)
+                            Your diagnostic conclusion based on the findings
                           </p>
                           {/* Quick Templates */}
                           <div className="mb-3">
-                            <label className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-2 block">
-                              Quick Templates (30+ Options):
-                            </label>
-                            
                             <div className="space-y-4">
                               {/* General/Normal Templates */}
                               <div>
                                 <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">🟢 General</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal ultrasound examination. No abnormalities detected.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal ultrasound examination. No abnormalities detected.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     ✅ Normal Study
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Technically limited study due to patient body habitus/gas/motion. Findings may be incomplete.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Technically limited study due to patient body habitus/gas/motion. Findings may be incomplete.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     📋 Limited Study
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings should be correlated with clinical presentation and laboratory results.")} className="border-blue-300 hover:bg-blue-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings should be correlated with clinical presentation and laboratory results.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🔍 Correlate Clinically
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Recommend clinical follow-up and repeat imaging if symptoms persist or worsen.")} className="border-blue-300 hover:bg-blue-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Recommend clinical follow-up and repeat imaging if symptoms persist or worsen.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     📊 Clinical Follow-up
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings require further evaluation or correlation with additional imaging modalities.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings require further evaluation or correlation with additional imaging modalities.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     ⚠️ Further Eval
                                   </Button>
                                 </div>
@@ -1841,40 +1884,40 @@ export default function Ultrasound() {
                               <div>
                                 <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">🟡 Abdominal</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings consistent with cholelithiasis. Multiple gallstones visualized within the gallbladder. No evidence of acute cholecystitis. Common bile duct normal in caliber.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings consistent with cholelithiasis. Multiple gallstones visualized within the gallbladder. No evidence of acute cholecystitis. Common bile duct normal in caliber.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     💎 Gallstones
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Hepatic steatosis (fatty liver). Increased echogenicity of liver parenchyma consistent with fatty infiltration.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Hepatic steatosis (fatty liver). Increased echogenicity of liver parenchyma consistent with fatty infiltration.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🫘 Fatty Liver
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Hydronephrosis - dilated renal collecting system suggesting ureteral obstruction. Recommend urological evaluation.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Hydronephrosis - dilated renal collecting system suggesting ureteral obstruction. Recommend urological evaluation.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     💧 Hydronephrosis
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Liver normal in size, contour, and echogenicity. No focal lesions or masses identified.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Liver normal in size, contour, and echogenicity. No focal lesions or masses identified.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🫘 Normal Liver
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Hepatomegaly noted. Liver size increased beyond normal limits. Recommend clinical correlation and further workup.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Hepatomegaly noted. Liver size increased beyond normal limits. Recommend clinical correlation and further workup.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🫘 Hepatomegaly
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Splenomegaly - enlarged spleen. Recommend hematological evaluation and clinical correlation.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Splenomegaly - enlarged spleen. Recommend hematological evaluation and clinical correlation.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🫘 Splenomegaly
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Both kidneys normal in size, position, and echotexture. No hydronephrosis, stones, or masses. Bladder unremarkable.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Both kidneys normal in size, position, and echotexture. No hydronephrosis, stones, or masses. Bladder unremarkable.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     💧 Normal Kidneys
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Simple renal cyst identified. Benign appearance. No intervention required unless symptomatic.")} className="border-blue-300 hover:bg-blue-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Simple renal cyst identified. Benign appearance. No intervention required unless symptomatic.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     💧 Renal Cyst
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Ascites - free intraperitoneal fluid noted. Recommend clinical correlation to determine etiology.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Ascites - free intraperitoneal fluid noted. Recommend clinical correlation to determine etiology.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     💧 Ascites
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Abdominal mass visualized. Further characterization with CT or MRI recommended for complete evaluation.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Abdominal mass visualized. Further characterization with CT or MRI recommended for complete evaluation.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     📍 Abdominal Mass
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings suggestive of acute appendicitis. Thickened, non-compressible appendix with periappendiceal fluid. Surgical consultation recommended.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings suggestive of acute appendicitis. Thickened, non-compressible appendix with periappendiceal fluid. Surgical consultation recommended.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🔴 Appendicitis
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pancreatic mass identified in the [head/body/tail] of pancreas. Further evaluation with CT/MRI and biopsy recommended.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pancreatic mass identified in the [head/body/tail] of pancreas. Further evaluation with CT/MRI and biopsy recommended.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🫘 Pancreatic Mass
                                   </Button>
                                 </div>
@@ -1884,31 +1927,31 @@ export default function Ultrasound() {
                               <div>
                                 <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">🟣 Obstetric</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Intrauterine pregnancy, single live fetus with cardiac activity. Gestational age [XX] weeks by biometry. Fetal anatomy appears normal.")} className="border-purple-300 hover:bg-purple-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Intrauterine pregnancy, single live fetus with cardiac activity. Gestational age [XX] weeks by biometry. Fetal anatomy appears normal.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🤰 Normal IUP
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal first trimester pregnancy. Single intrauterine gestation with fetal cardiac activity. Crown-rump length consistent with [X] weeks gestation.")} className="border-purple-300 hover:bg-purple-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal first trimester pregnancy. Single intrauterine gestation with fetal cardiac activity. Crown-rump length consistent with [X] weeks gestation.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     👶 Normal 1st Trimester
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal mid-trimester anatomy scan. All fetal structures visualized and appear within normal limits. No gross anatomical abnormalities detected.")} className="border-purple-300 hover:bg-purple-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal mid-trimester anatomy scan. All fetal structures visualized and appear within normal limits. No gross anatomical abnormalities detected.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     👶 Normal Anatomy Scan
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Fetal biometry appropriate for stated gestational age. Estimated fetal weight [XXX] grams. Growth parameters within normal range.")} className="border-purple-300 hover:bg-purple-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Fetal biometry appropriate for stated gestational age. Estimated fetal weight [XXX] grams. Growth parameters within normal range.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     👶 Normal Growth
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Oligohydramnios - reduced amniotic fluid volume. AFI [X] cm, below normal range. Recommend close monitoring and obstetric follow-up.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Oligohydramnios - reduced amniotic fluid volume. AFI [X] cm, below normal range. Recommend close monitoring and obstetric follow-up.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     💧 Oligohydramnios
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Polyhydramnios - increased amniotic fluid volume. AFI [X] cm, above normal range. Recommend evaluation for underlying causes.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Polyhydramnios - increased amniotic fluid volume. AFI [X] cm, above normal range. Recommend evaluation for underlying causes.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     💧 Polyhydramnios
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Placenta previa - placental edge covering or within 2 cm of internal cervical os. Recommend obstetric consultation and delivery planning.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Placenta previa - placental edge covering or within 2 cm of internal cervical os. Recommend obstetric consultation and delivery planning.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🔴 Placenta Previa
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Multiple gestation - [dichorionic diamniotic / monochorionic diamniotic] twin pregnancy. Both fetuses viable with cardiac activity.")} className="border-purple-300 hover:bg-purple-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Multiple gestation - [dichorionic diamniotic / monochorionic diamniotic] twin pregnancy. Both fetuses viable with cardiac activity.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     👥 Twins/Triplets
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings suspicious for ectopic pregnancy. No intrauterine gestational sac visualized. Complex adnexal mass with free fluid. Recommend gynecological consultation urgently.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Findings suspicious for ectopic pregnancy. No intrauterine gestational sac visualized. Complex adnexal mass with free fluid. Recommend gynecological consultation urgently.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🔴 Ectopic Pregnancy
                                   </Button>
                                 </div>
@@ -1918,22 +1961,22 @@ export default function Ultrasound() {
                               <div>
                                 <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">❤️ Cardiac</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal echocardiogram. Cardiac chambers normal in size. LV systolic function normal with EF 55-60%. All valves normal without significant stenosis or regurgitation.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal echocardiogram. Cardiac chambers normal in size. LV systolic function normal with EF 55-60%. All valves normal without significant stenosis or regurgitation.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     ❤️ Normal Echo
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Left ventricular systolic dysfunction. Reduced ejection fraction estimated at [30-40]%. Global hypokinesis. Recommend cardiology consultation.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Left ventricular systolic dysfunction. Reduced ejection fraction estimated at [30-40]%. Global hypokinesis. Recommend cardiology consultation.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     💔 LV Dysfunction (EF &lt;40%)
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pericardial effusion - [small/moderate/large] circumferential fluid collection. No evidence of tamponade physiology at this time.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pericardial effusion - [small/moderate/large] circumferential fluid collection. No evidence of tamponade physiology at this time.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     💧 Pericardial Effusion
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Valvular disease identified. [Specify valve] shows [stenosis/regurgitation] of [mild/moderate/severe] degree. Recommend cardiology follow-up.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Valvular disease identified. [Specify valve] shows [stenosis/regurgitation] of [mild/moderate/severe] degree. Recommend cardiology follow-up.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🫀 Valvular Disease
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Regional wall motion abnormality noted in [specify segments]. Suggests ischemic cardiac disease. Recommend cardiology consultation and stress testing.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Regional wall motion abnormality noted in [specify segments]. Suggests ischemic cardiac disease. Recommend cardiology consultation and stress testing.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     📉 RWMA
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Diastolic dysfunction - impaired left ventricular relaxation pattern. Recommend clinical correlation and cardiology follow-up.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Diastolic dysfunction - impaired left ventricular relaxation pattern. Recommend clinical correlation and cardiology follow-up.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     ❤️ Diastolic Dysfunction
                                   </Button>
                                 </div>
@@ -1943,25 +1986,25 @@ export default function Ultrasound() {
                               <div>
                                 <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">🩸 Vascular</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal carotid Doppler study. Bilateral carotid arteries patent with normal flow velocities. No evidence of significant stenosis.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal carotid Doppler study. Bilateral carotid arteries patent with normal flow velocities. No evidence of significant stenosis.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🩸 Normal Carotid
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Mild carotid stenosis - less than 50% luminal narrowing. Recommend vascular follow-up and risk factor modification.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Mild carotid stenosis - less than 50% luminal narrowing. Recommend vascular follow-up and risk factor modification.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     ⚠️ Stenosis &lt;50%
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Severe carotid stenosis - greater than 50% luminal narrowing with elevated peak systolic velocities. Vascular surgery consultation recommended.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Severe carotid stenosis - greater than 50% luminal narrowing with elevated peak systolic velocities. Vascular surgery consultation recommended.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🔴 Stenosis &gt;50%
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Deep vein thrombosis identified in [specify location] lower extremity. Non-compressible vein with echogenic thrombus. Anticoagulation recommended.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Deep vein thrombosis identified in [specify location] lower extremity. Non-compressible vein with echogenic thrombus. Anticoagulation recommended.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🦵 DVT Detected
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("No evidence of deep vein thrombosis. All visualized deep veins compressible with normal Doppler flow.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("No evidence of deep vein thrombosis. All visualized deep veins compressible with normal Doppler flow.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     ✅ No DVT
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Renal artery stenosis suspected. Elevated peak systolic velocities in [right/left] renal artery. Further evaluation with CTA or MRA recommended.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Renal artery stenosis suspected. Elevated peak systolic velocities in [right/left] renal artery. Further evaluation with CTA or MRA recommended.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🫘 Renal Artery Stenosis
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("AV fistula patent and functional. Good arterial inflow and venous outflow. Suitable for dialysis access.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("AV fistula patent and functional. Good arterial inflow and venous outflow. Suitable for dialysis access.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🩸 AV Fistula Patent
                                   </Button>
                                 </div>
@@ -1971,31 +2014,31 @@ export default function Ultrasound() {
                               <div>
                                 <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">🩻 Pelvic</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal pelvic ultrasound. Uterus and ovaries normal in size and appearance. No masses or free fluid identified.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal pelvic ultrasound. Uterus and ovaries normal in size and appearance. No masses or free fluid identified.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🩻 Normal Pelvic
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Simple ovarian cyst - [right/left] ovary with thin-walled, anechoic cyst measuring [X] cm. Benign appearance, likely functional. Follow-up recommended.")} className="border-blue-300 hover:bg-blue-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Simple ovarian cyst - [right/left] ovary with thin-walled, anechoic cyst measuring [X] cm. Benign appearance, likely functional. Follow-up recommended.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🫧 Simple Ovarian Cyst
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Complex ovarian cyst with internal septations/solid components. Further evaluation recommended to exclude neoplasm.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Complex ovarian cyst with internal septations/solid components. Further evaluation recommended to exclude neoplasm.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🔴 Complex Cyst
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Uterine fibroids (leiomyomas) - multiple intramural/subserosal/submucosal masses consistent with fibroids. [Specify sizes if symptomatic].")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Uterine fibroids (leiomyomas) - multiple intramural/subserosal/submucosal masses consistent with fibroids. [Specify sizes if symptomatic].")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🫀 Uterine Fibroids
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Endometrial thickening - endometrial stripe measures [X] mm. Recommend clinical correlation and possible endometrial sampling if postmenopausal.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Endometrial thickening - endometrial stripe measures [X] mm. Recommend clinical correlation and possible endometrial sampling if postmenopausal.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     📏 Endometrial Thickening
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Free fluid in pelvis (pouch of Douglas). Small volume pelvic free fluid noted. Clinical correlation recommended.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Free fluid in pelvis (pouch of Douglas). Small volume pelvic free fluid noted. Clinical correlation recommended.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     💧 Pelvic Free Fluid
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal scrotal ultrasound. Both testes normal in size, echogenicity, and vascularity. No masses, hydrocele, or varicocele identified.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal scrotal ultrasound. Both testes normal in size, echogenicity, and vascularity. No masses, hydrocele, or varicocele identified.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🔵 Normal Scrotal US
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Testicular mass/lesion identified in [right/left] testis. Solid hypoechoic mass measuring [X] cm. Urological consultation and tumor markers recommended urgently.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Testicular mass/lesion identified in [right/left] testis. Solid hypoechoic mass measuring [X] cm. Urological consultation and tumor markers recommended urgently.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🔴 Testicular Mass
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Prostatic enlargement - prostate volume estimated at [X] cc, consistent with benign prostatic hyperplasia (BPH). Recommend urological evaluation.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Prostatic enlargement - prostate volume estimated at [X] cc, consistent with benign prostatic hyperplasia (BPH). Recommend urological evaluation.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🫘 Enlarged Prostate
                                   </Button>
                                 </div>
@@ -2005,22 +2048,22 @@ export default function Ultrasound() {
                               <div>
                                 <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">🦴 Musculoskeletal</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal musculoskeletal ultrasound. Tendons and ligaments intact without evidence of tear or significant abnormality.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal musculoskeletal ultrasound. Tendons and ligaments intact without evidence of tear or significant abnormality.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     ✅ Normal - No Tear
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Partial-thickness rotator cuff tear. [Specify tendon] shows focal thinning and hypoechoic defect consistent with partial tear.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Partial-thickness rotator cuff tear. [Specify tendon] shows focal thinning and hypoechoic defect consistent with partial tear.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🔴 RC Tear - Partial
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Full-thickness rotator cuff tear. Complete disruption of [specify tendon] with retraction. Orthopedic consultation recommended.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Full-thickness rotator cuff tear. Complete disruption of [specify tendon] with retraction. Orthopedic consultation recommended.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🔴 RC Tear - Complete
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Joint effusion - [small/moderate/large] fluid collection within [specify joint]. Clinical correlation recommended.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Joint effusion - [small/moderate/large] fluid collection within [specify joint]. Clinical correlation recommended.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     💧 Joint Effusion
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Tendinopathy - [specify tendon] shows thickening and heterogeneous echotexture consistent with chronic tendinosis.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Tendinopathy - [specify tendon] shows thickening and heterogeneous echotexture consistent with chronic tendinosis.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🦴 Tendinopathy
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Soft tissue mass identified measuring [X] cm. Recommend MRI for further characterization and possible biopsy.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Soft tissue mass identified measuring [X] cm. Recommend MRI for further characterization and possible biopsy.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     📍 Soft Tissue Mass
                                   </Button>
                                 </div>
@@ -2030,16 +2073,16 @@ export default function Ultrasound() {
                               <div>
                                 <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">🫁 Thoracic</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pleural effusion - [small/moderate/large] volume fluid collection in [right/left] pleural space. Thoracentesis may be considered if symptomatic.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pleural effusion - [small/moderate/large] volume fluid collection in [right/left] pleural space. Thoracentesis may be considered if symptomatic.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     💧 Pleural Effusion
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal thyroid gland. Both lobes normal in size and echogenicity. No nodules or masses identified.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Normal thyroid gland. Both lobes normal in size and echogenicity. No nodules or masses identified.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🫁 Normal Thyroid
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Thyroid nodule(s) identified. [Specify characteristics: size, location, solid/cystic, calcifications]. TI-RADS classification [X]. Consider FNA if indicated.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Thyroid nodule(s) identified. [Specify characteristics: size, location, solid/cystic, calcifications]. TI-RADS classification [X]. Consider FNA if indicated.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     🔴 Thyroid Nodule
                                   </Button>
-                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Neck mass visualized in [specify location]. Further evaluation with CT/MRI recommended for complete characterization.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Neck mass visualized in [specify location]. Further evaluation with CT/MRI recommended for complete characterization.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start">
                                     📍 Neck Mass
                                   </Button>
                                 </div>
@@ -2082,22 +2125,22 @@ export default function Ultrasound() {
                               Quick Add:
                             </label>
                             <div className="flex flex-wrap gap-2">
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("No further imaging required at this time.")} className="text-xs border-green-300 hover:bg-green-50">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("No further imaging required at this time.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                                 ✅ No Follow-up
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Follow-up ultrasound in 4-6 weeks.")} className="text-xs border-blue-300 hover:bg-blue-50">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Follow-up ultrasound in 4-6 weeks.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                                 📅 Repeat US
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("CT scan recommended for further evaluation.")} className="text-xs border-blue-300 hover:bg-blue-50">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("CT scan recommended for further evaluation.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                                 🔍 CT Scan
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("MRI recommended for detailed assessment.")} className="text-xs border-purple-300 hover:bg-purple-50">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("MRI recommended for detailed assessment.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                                 🧲 MRI
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Clinical correlation recommended.")} className="text-xs border-amber-300 hover:bg-amber-50">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Clinical correlation recommended.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                                 💡 Clinical Correlation
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Specialist consultation recommended.")} className="text-xs border-orange-300 hover:bg-orange-50">
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Specialist consultation recommended.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                                 👨‍⚕️ Specialist Consult
                               </Button>
                             </div>
@@ -2238,8 +2281,8 @@ export default function Ultrasound() {
                 />
               </div>
 
-              {/* Action Buttons with Auto-save Indicator */}
-              <div className="pt-4 border-t border-indigo-100 dark:border-indigo-900">
+              {/* Sticky Action Footer */}
+              <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 pt-4 pb-2 -mx-6 px-6 mt-6">
                 {/* Auto-save indicator */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -2265,7 +2308,7 @@ export default function Ultrasound() {
                   
                   {/* Keyboard shortcuts hint */}
                   <div className="flex items-center gap-3 text-xs text-gray-400">
-                    <span className="hidden md:inline">💡 Shortcuts:</span>
+                    <span className="hidden md:inline">Shortcuts:</span>
                     <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs border">Ctrl+S</kbd>
                     <span className="hidden md:inline">Save</span>
                     {hasPreviousReports && (
@@ -2279,17 +2322,17 @@ export default function Ultrasound() {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   {hasPreviousReports && (
                     <Button
                       type="button"
                       variant="outline"
                       onClick={copyFromPreviousReport}
-                      className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 min-h-[44px]"
+                      className="border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20 min-h-[44px]"
                       title="Ctrl+D to copy previous report"
                     >
                       <Copy className="w-4 h-4 mr-2" />
-                      Copy Previous Report
+                      Copy Previous
                     </Button>
                   )}
                   
@@ -2306,7 +2349,7 @@ export default function Ultrasound() {
                           }, 100);
                         }
                       }}
-                      className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 min-h-[44px]"
+                      className="border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20 min-h-[44px]"
                       data-testid="button-print-report"
                     >
                       <Printer className="w-4 h-4 mr-2" />
@@ -2320,7 +2363,6 @@ export default function Ultrasound() {
                         if (selectedUltrasoundExam && reportPatient) {
                           setShowUltrasoundReport(true);
                           setTimeout(() => {
-                            // Trigger print dialog which allows saving as PDF
                             window.print();
                             setTimeout(() => setShowUltrasoundReport(false), 500);
                           }, 100);
@@ -2331,11 +2373,11 @@ export default function Ultrasound() {
                           });
                         }
                       }}
-                      className="border-blue-300 text-blue-700 hover:bg-blue-50 min-h-[44px]"
+                      className="border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20 min-h-[44px]"
                       data-testid="button-export-pdf"
                     >
                       <FileDown className="w-4 h-4 mr-2" />
-                      Export PDF
+                      PDF
                     </Button>
                   </div>
                   
@@ -2357,7 +2399,7 @@ export default function Ultrasound() {
                     <Button
                       type="submit"
                       disabled={updateUltrasoundExamMutation.isPending}
-                      className="bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-700 hover:to-purple-600 text-white shadow-lg min-h-[44px]"
+                      className="bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-white shadow-lg min-h-[44px]"
                       data-testid="button-save-report"
                       title="Ctrl+S to save"
                     >
@@ -2375,7 +2417,7 @@ export default function Ultrasound() {
                   </Button>
                 </div>
               </div>
-            </div>
+              </div>
             </form>
           </Form>
           </>

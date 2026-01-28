@@ -1117,7 +1117,7 @@ export default function XRay() {
 
       {/* Results/Report Dialog */}
       <Dialog open={resultsModalOpen} onOpenChange={setResultsModalOpen}>
-        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border-0">
+        <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] overflow-hidden border-0 flex flex-col" hideCloseButton>
           {reportPatient && selectedXrayExam && (
             <UnifiedModalHeader
               modality="xray"
@@ -1131,28 +1131,56 @@ export default function XRay() {
             />
           )}
 
-          <div className="px-6 max-h-[calc(95vh-180px)] overflow-y-auto">
+          <div className="flex-1 px-6 overflow-y-auto min-h-0">
             {/* VIEW MODE - Unified diagnostic result UI */}
             {viewMode === "view" && selectedXrayExam && (
               <div className="space-y-4 pb-6">
               {/* Summary Card - Single source of truth for patient/order info */}
-              {reportPatient && (
-                <SummaryCard
-                  modality="xray"
-                  patient={{
-                    name: fullName(reportPatient),
-                    patientId: reportPatient.patientId,
-                    age: reportPatient.age,
-                    gender: reportPatient.gender,
-                    phone: reportPatient.phoneNumber,
-                  }}
-                  orderId={selectedXrayExam.examId || ""}
-                  priority={"routine"}
-                  paymentStatus={(selectedXrayExam.paymentStatus as "paid" | "unpaid") || "unpaid"}
-                  requestedDate={selectedXrayExam.requestedDate}
-                  completedDate={selectedXrayExam.reportDate}
-                />
-              )}
+              {reportPatient && (() => {
+                // Determine severity from impression for X-ray
+                // Improved pattern matching to avoid false positives from negations
+                const imp = (selectedXrayExam.impression || "").toLowerCase();
+                let criticalCount = 0;
+                let abnormalCount = 0;
+                
+                // Check for negative patterns that should NOT trigger critical/abnormal
+                const hasNegation = imp.includes("no fracture") || imp.includes("no acute") || 
+                  imp.includes("no mass") || imp.includes("no pneumothorax") || imp.includes("no effusion") ||
+                  imp.includes("without fracture") || imp.includes("without mass") ||
+                  imp.includes("negative for") || imp.includes("no evidence of");
+                
+                // Only flag as critical if NOT negated
+                if (!hasNegation && (
+                    imp.includes("fracture") || imp.includes("pneumothorax") || imp.includes("mass") || 
+                    imp.includes("acute") || imp.includes("emergency") || imp.includes("urgent") ||
+                    imp.includes("cardiomegaly") || imp.includes("consolidation") || imp.includes("effusion"))) {
+                  criticalCount = 1;
+                } else if (!hasNegation && (
+                    imp.includes("mild") || imp.includes("borderline") || imp.includes("degenerative") ||
+                    imp.includes("chronic") || imp.includes("follow") || imp.includes("correlation"))) {
+                  abnormalCount = 1;
+                }
+                
+                return (
+                  <SummaryCard
+                    modality="xray"
+                    patient={{
+                      name: fullName(reportPatient),
+                      patientId: reportPatient.patientId,
+                      age: reportPatient.age,
+                      gender: reportPatient.gender,
+                      phone: reportPatient.phoneNumber,
+                    }}
+                    orderId={selectedXrayExam.examId || ""}
+                    priority={"routine"}
+                    paymentStatus={(selectedXrayExam.paymentStatus as "paid" | "unpaid") || "unpaid"}
+                    requestedDate={selectedXrayExam.requestedDate}
+                    completedDate={selectedXrayExam.reportDate}
+                    abnormalCount={abnormalCount}
+                    criticalCount={criticalCount}
+                  />
+                );
+              })()}
 
               {/* Tests Ordered Row - compact exam info */}
               <TestsOrderedRow
@@ -1283,21 +1311,18 @@ export default function XRay() {
             <Form {...resultsForm}>
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 pb-6">
               
-              {/* Attachments Accordion - collapsed by default */}
-              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              {/* Attachments Accordion - collapsed by default, calmer styling */}
+              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200/70 dark:border-gray-700/70 rounded-lg overflow-hidden">
                 <AccordionItem value="attachments" className="border-0">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:no-underline">
+                  <AccordionTrigger className="px-3 py-2.5 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Attachments (Optional)</span>
-                      {uploadedImages.length > 0 && (
-                        <Badge variant="outline" className="ml-2 text-xs bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600">
-                          {uploadedImages.length}
-                        </Badge>
-                      )}
+                      <Paperclip className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
+                        Attachments{uploadedImages.length > 0 ? ` (${uploadedImages.length})` : " (Optional)"}
+                      </span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
+                  <AccordionContent className="px-3 pb-3">
                     {/* Tabs for Describe Views vs Upload Images */}
                     <Tabs value={imageUploadMode} onValueChange={(v) => setImageUploadMode(v as 'describe' | 'upload')} className="w-full">
                       <TabsList className="grid w-full grid-cols-2">
@@ -1906,14 +1931,11 @@ export default function XRay() {
               <Accordion type="multiple" className="w-full space-y-4">
                 
                 {/* Clinical Impression - Collapsible */}
-                <AccordionItem value="impression" className="border-2 border-purple-100 rounded-xl overflow-hidden">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-purple-50 hover:no-underline">
+                <AccordionItem value="impression" className="border border-purple-100 dark:border-purple-900/40 rounded-xl overflow-hidden">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-purple-50/50 dark:hover:bg-purple-900/20 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Filter className="w-5 h-5 text-purple-600" />
-                      <span className="font-semibold text-gray-900">Clinical Impression</span>
-                      <Badge variant="outline" className="ml-2 text-xs border-purple-300 text-purple-700">
-                        Click to expand
-                      </Badge>
+                      <Filter className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">Clinical Impression</span>
                     </div>
                   </AccordionTrigger>
                   
@@ -1923,29 +1945,29 @@ export default function XRay() {
                       name="impression"
                       render={({ field }) => (
                         <FormItem>
-                          {/* Quick Templates */}
+                          {/* Quick Templates - Neutral styling with status dots */}
                           <div className="mb-3">
-                            <label className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-2 block">
+                            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2 block">
                               Quick Templates:
                             </label>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("No acute fracture, dislocation, or other bony abnormality. Normal study.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
-                                ✅ Normal Study
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("No acute fracture, dislocation, or other bony abnormality. Normal study.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                                <span className="w-2 h-2 rounded-full bg-green-500 mr-2 flex-shrink-0"></span>Normal Study
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Fracture of [specify bone] requiring orthopedic evaluation and management.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
-                                🦴 Fracture
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Fracture of [specify bone] requiring orthopedic evaluation and management.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                                <span className="w-2 h-2 rounded-full bg-red-500 mr-2 flex-shrink-0"></span>Fracture
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Degenerative changes consistent with osteoarthritis.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
-                                🦴 Arthritis
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Degenerative changes consistent with osteoarthritis.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 mr-2 flex-shrink-0"></span>Arthritis
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Soft tissue injury without associated bony abnormality.")} className="border-blue-300 hover:bg-blue-50 text-xs justify-start">
-                                🩹 Soft Tissue
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Soft tissue injury without associated bony abnormality.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                                <span className="w-2 h-2 rounded-full bg-blue-500 mr-2 flex-shrink-0"></span>Soft Tissue
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pneumonia/infiltrate seen in [location]. Clinical correlation advised.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
-                                🫁 Pneumonia
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pneumonia/infiltrate seen in [location]. Clinical correlation advised.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                                <span className="w-2 h-2 rounded-full bg-red-500 mr-2 flex-shrink-0"></span>Pneumonia
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Suspicious finding requiring further evaluation.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
-                                ⚠️ Suspicious
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Suspicious finding requiring further evaluation.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                                <span className="w-2 h-2 rounded-full bg-orange-500 mr-2 flex-shrink-0"></span>Suspicious
                               </Button>
                             </div>
                           </div>
@@ -1987,14 +2009,11 @@ export default function XRay() {
                 </AccordionItem>
                 
                 {/* Recommendations - Collapsible */}
-                <AccordionItem value="recommendations" className="border-2 border-green-100 rounded-xl overflow-hidden">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-green-50 hover:no-underline">
+                <AccordionItem value="recommendations" className="border border-green-100 dark:border-green-900/40 rounded-xl overflow-hidden">
+                  <AccordionTrigger className="px-4 py-3 hover:bg-green-50/50 dark:hover:bg-green-900/20 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Lightbulb className="w-5 h-5 text-green-600" />
-                      <span className="font-semibold text-gray-900">Recommendations</span>
-                      <Badge variant="outline" className="ml-2 text-xs border-green-300 text-green-700">
-                        Click to expand
-                      </Badge>
+                      <Lightbulb className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">Recommendations</span>
                     </div>
                   </AccordionTrigger>
                   
@@ -2010,29 +2029,29 @@ export default function XRay() {
                               Quick Add:
                             </label>
                             <div className="flex flex-wrap gap-2">
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("No further imaging required at this time.")} className="text-xs border-green-300 hover:bg-green-50">
-                                ✅ No Follow-up
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("No further imaging required at this time.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                No Follow-up
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Follow-up X-ray in 4-6 weeks to assess healing.")} className="text-xs border-blue-300 hover:bg-blue-50">
-                                📅 Follow-up XR
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Follow-up X-ray in 4-6 weeks to assess healing.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                Follow-up XR
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("CT scan recommended for better anatomical detail.")} className="text-xs border-blue-300 hover:bg-blue-50">
-                                🔍 CT Scan
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("CT scan recommended for better anatomical detail.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                CT Scan
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("MRI recommended for soft tissue evaluation.")} className="text-xs border-purple-300 hover:bg-purple-50">
-                                🧲 MRI
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("MRI recommended for soft tissue evaluation.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                MRI
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Ultrasound for further characterization.")} className="text-xs border-cyan-300 hover:bg-cyan-50">
-                                🔊 Ultrasound
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Ultrasound for further characterization.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                Ultrasound
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Clinical correlation recommended.")} className="text-xs border-amber-300 hover:bg-amber-50">
-                                💡 Clinical Correlation
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Clinical correlation recommended.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                Clinical Correlation
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Orthopedic consultation recommended.")} className="text-xs border-orange-300 hover:bg-orange-50">
-                                👨‍⚕️ Ortho Consult
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Orthopedic consultation recommended.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                Ortho Consult
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Urgent surgical consultation required.")} className="text-xs border-red-300 hover:bg-red-50">
-                                🚨 Urgent Surgery
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Urgent surgical consultation required.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                <span className="w-2 h-2 rounded-full bg-red-500 mr-1.5 flex-shrink-0"></span>Urgent Surgery
                               </Button>
                             </div>
                           </div>
@@ -2045,7 +2064,7 @@ export default function XRay() {
                               size="sm" 
                               variant="outline"
                               onClick={() => startVoiceInput('recommendations')}
-                              className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                              className="border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
                             >
                               <Mic className={`w-3 h-3 mr-1 ${isRecording.recommendations ? 'animate-pulse text-red-500' : ''}`} />
                               {isRecording.recommendations ? 'Stop' : 'Dictate'}
@@ -2173,56 +2192,58 @@ export default function XRay() {
                 />
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-4 border-t border-blue-100 dark:border-blue-900">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    if (selectedXrayExam && reportPatient) {
-                      setShowXrayReport(true);
-                      setTimeout(() => window.print(), 100);
-                    }
-                  }}
-                  className="border-blue-300 text-blue-700 hover:bg-blue-50 min-h-[44px]"
-                  data-testid="button-print-report"
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print Report
-                </Button>
-                
-                <div className="flex gap-3">
+              {/* Sticky Action Footer */}
+              <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 pt-4 pb-2 -mx-6 px-6 mt-6">
+                <div className="flex items-center justify-between">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setResultsModalOpen(false);
-                      setSelectedXrayExam(null);
-                      setUploadedImages([]);
+                      if (selectedXrayExam && reportPatient) {
+                        setShowXrayReport(true);
+                        setTimeout(() => window.print(), 100);
+                      }
                     }}
-                    className="min-h-[44px]"
-                    data-testid="button-cancel-report"
+                    className="border-cyan-300 text-cyan-700 hover:bg-cyan-50 dark:border-cyan-700 dark:text-cyan-400 dark:hover:bg-cyan-900/20 min-h-[44px]"
+                    data-testid="button-print-report"
                   >
-                    Cancel
+                    <Printer className="w-4 h-4 mr-2" />
+                    Print Report
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={updateXrayExamMutation.isPending}
-                    className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white shadow-lg min-h-[44px]"
-                    data-testid="button-save-report"
-                  >
-                    {updateXrayExamMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Report
-                      </>
-                    )}
-                  </Button>
+                  
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setResultsModalOpen(false);
+                        setSelectedXrayExam(null);
+                        setUploadedImages([]);
+                      }}
+                      className="min-h-[44px]"
+                      data-testid="button-cancel-report"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={updateXrayExamMutation.isPending}
+                      className="bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-700 hover:to-teal-600 text-white shadow-lg min-h-[44px]"
+                      data-testid="button-save-report"
+                    >
+                      {updateXrayExamMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          Save Report
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </form>

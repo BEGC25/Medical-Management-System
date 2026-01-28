@@ -1629,7 +1629,7 @@ return (
       </div>
 
       <Dialog open={resultsModalOpen} onOpenChange={setResultsModalOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden border-0">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden border-0" hideCloseButton>
           <UnifiedModalHeader
             modality="lab"
             title="Laboratory Test Results"
@@ -1645,23 +1645,38 @@ return (
           {selectedLabTest && viewMode === "view" && (
             <div className="space-y-4 px-6 max-h-[calc(90vh-180px)] overflow-y-auto">
               {/* Summary Card - Single source of truth for patient/order info */}
-              {reportPatient && (
-                <SummaryCard
-                  modality="lab"
-                  patient={{
-                    name: fullName(reportPatient),
-                    patientId: reportPatient.patientId,
-                    age: reportPatient.age,
-                    gender: reportPatient.gender,
-                    phone: reportPatient.phoneNumber,
-                  }}
-                  orderId={selectedLabTest.testId || ""}
-                  priority={(selectedLabTest.priority as "routine" | "urgent" | "stat") || "routine"}
-                  paymentStatus={(selectedLabTest.paymentStatus as "paid" | "unpaid") || "unpaid"}
-                  requestedDate={selectedLabTest.requestedDate}
-                  completedDate={selectedLabTest.completedDate}
-                />
-              )}
+              {reportPatient && (() => {
+                // Compute abnormal/critical counts for SummaryCard
+                const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
+                const entries = Object.entries(results);
+                let criticalCount = 0;
+                let abnormalCount = 0;
+                entries.forEach(([testName, testData]) => {
+                  const severity = getTestSeverity(testName, testData, reportPatient || undefined);
+                  if (severity === "critical") criticalCount++;
+                  else if (severity === "abnormal") abnormalCount++;
+                });
+                
+                return (
+                  <SummaryCard
+                    modality="lab"
+                    patient={{
+                      name: fullName(reportPatient),
+                      patientId: reportPatient.patientId,
+                      age: reportPatient.age,
+                      gender: reportPatient.gender,
+                      phone: reportPatient.phoneNumber,
+                    }}
+                    orderId={selectedLabTest.testId || ""}
+                    priority={(selectedLabTest.priority as "routine" | "urgent" | "stat") || "routine"}
+                    paymentStatus={(selectedLabTest.paymentStatus as "paid" | "unpaid") || "unpaid"}
+                    requestedDate={selectedLabTest.requestedDate}
+                    completedDate={selectedLabTest.completedDate}
+                    abnormalCount={abnormalCount}
+                    criticalCount={criticalCount}
+                  />
+                );
+              })()}
 
               {/* Tests Ordered Row - compact with +N more */}
               <TestsOrderedRow
@@ -1882,17 +1897,17 @@ return (
               />
               
               {/* Attachments Accordion - collapsed by default */}
-              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200/70 dark:border-gray-700/70 rounded-lg overflow-hidden">
                 <AccordionItem value="attachments" className="border-0">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:no-underline">
+                  <AccordionTrigger className="px-3 py-2.5 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Attachments (Optional)</span>
-                      {selectedLabTest.attachments && parseJSON<any[]>(selectedLabTest.attachments, []).length > 0 && (
-                        <Badge variant="outline" className="ml-2 text-xs bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600">
-                          {parseJSON<any[]>(selectedLabTest.attachments, []).length}
-                        </Badge>
-                      )}
+                      <Paperclip className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
+                        Attachments
+                        {selectedLabTest.attachments && parseJSON<any[]>(selectedLabTest.attachments, []).length > 0 
+                          ? ` (${parseJSON<any[]>(selectedLabTest.attachments, []).length})`
+                          : " (Optional)"}
+                      </span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
