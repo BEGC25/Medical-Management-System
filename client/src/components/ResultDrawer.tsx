@@ -140,12 +140,12 @@ export default function ResultDrawer(props: {
 
   // LAB specifics
   const tests = React.useMemo<string[]>(
-    () => parseJSON<string[]>(data?.tests, Array.isArray(data?.tests) ? data?.tests : []),
-    [data]
+    () => parseJSON<string[]>(data?.tests, []),
+    [data?.tests]
   );
   const results = React.useMemo<Record<string, Record<string, string>>>(
     () => parseJSON<Record<string, Record<string, string>>>(data?.results, {}),
-    [data]
+    [data?.results]
   );
 
   return (
