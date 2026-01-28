@@ -1846,8 +1846,9 @@ export default function Treatment() {
         });
       } else {
         // Partial success - remove only successful medications, keep failed ones for retry
-        const failedMeds = results.filter(r => !r.success).map(r => r.medication);
-        const failedDrugNames = results.filter(r => !r.success).map(r => r.medication.drugName).join(", ");
+        const failedResults = results.filter(r => !r.success);
+        const failedMeds = failedResults.map(r => r.medication);
+        const failedDrugNames = failedResults.map(r => r.medication.drugName).join(", ");
         setMedications(failedMeds);
         toast({ 
           title: "Partial Success", 
@@ -1856,8 +1857,6 @@ export default function Treatment() {
         });
       }
     },
-    onError: (e: any) =>
-      toast({ title: "Error", description: e?.message || "Failed to submit medications", variant: "destructive" }),
   });
 
   const cancelPrescriptionMutation = useMutation({
