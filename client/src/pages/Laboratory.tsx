@@ -1902,12 +1902,12 @@ return (
                   <AccordionTrigger className="px-3 py-2.5 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:no-underline">
                     <div className="flex items-center gap-2">
                       <Paperclip className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                      <span className="text-sm font-normal text-gray-600 dark:text-gray-400">Attachments</span>
-                      {selectedLabTest.attachments && parseJSON<any[]>(selectedLabTest.attachments, []).length > 0 && (
-                        <Badge variant="outline" className="ml-2 text-xs bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600">
-                          {parseJSON<any[]>(selectedLabTest.attachments, []).length}
-                        </Badge>
-                      )}
+                      <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
+                        Attachments
+                        {selectedLabTest.attachments && parseJSON<any[]>(selectedLabTest.attachments, []).length > 0 
+                          ? ` (${parseJSON<any[]>(selectedLabTest.attachments, []).length})`
+                          : " (Optional)"}
+                      </span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">

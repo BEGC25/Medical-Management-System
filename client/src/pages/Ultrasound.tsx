@@ -1291,14 +1291,23 @@ export default function Ultrasound() {
                 let criticalCount = 0;
                 let abnormalCount = 0;
                 
-                if (imp.includes("mass") || imp.includes("tumor") || imp.includes("malignancy") || 
+                // Check for negative patterns that should NOT trigger critical/abnormal
+                const hasNegation = imp.includes("no mass") || imp.includes("no tumor") || 
+                  imp.includes("no acute") || imp.includes("no abnormal") || imp.includes("no cyst") ||
+                  imp.includes("without mass") || imp.includes("without tumor") ||
+                  imp.includes("negative for") || imp.includes("no evidence of") || imp.includes("unremarkable");
+                
+                // Only flag as critical if NOT negated
+                if (!hasNegation && (
+                    imp.includes("mass") || imp.includes("tumor") || imp.includes("malignancy") || 
                     imp.includes("acute") || imp.includes("emergency") || imp.includes("urgent") ||
                     imp.includes("ectopic") || imp.includes("rupture") || imp.includes("abscess") ||
-                    imp.includes("infarction") || imp.includes("thrombus")) {
+                    imp.includes("infarction") || imp.includes("thrombus"))) {
                   criticalCount = 1;
-                } else if (imp.includes("cyst") || imp.includes("polyp") || imp.includes("fibroid") ||
+                } else if (!hasNegation && (
+                    imp.includes("cyst") || imp.includes("polyp") || imp.includes("fibroid") ||
                     imp.includes("mild") || imp.includes("borderline") || imp.includes("follow") ||
-                    imp.includes("correlation") || imp.includes("enlarged") || imp.includes("suspicious")) {
+                    imp.includes("correlation") || imp.includes("enlarged") || imp.includes("suspicious"))) {
                   abnormalCount = 1;
                 }
                 

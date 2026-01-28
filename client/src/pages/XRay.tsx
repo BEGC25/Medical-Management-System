@@ -1138,16 +1138,26 @@ export default function XRay() {
               {/* Summary Card - Single source of truth for patient/order info */}
               {reportPatient && (() => {
                 // Determine severity from impression for X-ray
+                // Improved pattern matching to avoid false positives from negations
                 const imp = (selectedXrayExam.impression || "").toLowerCase();
                 let criticalCount = 0;
                 let abnormalCount = 0;
                 
-                if (imp.includes("fracture") || imp.includes("pneumothorax") || imp.includes("mass") || 
+                // Check for negative patterns that should NOT trigger critical/abnormal
+                const hasNegation = imp.includes("no fracture") || imp.includes("no acute") || 
+                  imp.includes("no mass") || imp.includes("no pneumothorax") || imp.includes("no effusion") ||
+                  imp.includes("without fracture") || imp.includes("without mass") ||
+                  imp.includes("negative for") || imp.includes("no evidence of");
+                
+                // Only flag as critical if NOT negated
+                if (!hasNegation && (
+                    imp.includes("fracture") || imp.includes("pneumothorax") || imp.includes("mass") || 
                     imp.includes("acute") || imp.includes("emergency") || imp.includes("urgent") ||
-                    imp.includes("cardiomegaly") || imp.includes("consolidation") || imp.includes("effusion")) {
+                    imp.includes("cardiomegaly") || imp.includes("consolidation") || imp.includes("effusion"))) {
                   criticalCount = 1;
-                } else if (imp.includes("mild") || imp.includes("borderline") || imp.includes("degenerative") ||
-                    imp.includes("chronic") || imp.includes("follow") || imp.includes("correlation")) {
+                } else if (!hasNegation && (
+                    imp.includes("mild") || imp.includes("borderline") || imp.includes("degenerative") ||
+                    imp.includes("chronic") || imp.includes("follow") || imp.includes("correlation"))) {
                   abnormalCount = 1;
                 }
                 
