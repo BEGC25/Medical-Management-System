@@ -228,7 +228,7 @@ export const paymentItems = sqliteTable("payment_items", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   paymentId: text("payment_id").notNull(),
   orderLineId: integer("order_line_id"), // Link to order line for new payment system
-  serviceId: integer("service_id").notNull(),
+  serviceId: integer("service_id"), // Optional - null for pharmacy_order items (priced via drug catalog)
   relatedId: text("related_id"), // ID of lab test, x-ray, ultrasound, or pharmacy order
   relatedType: text("related_type").$type<"consultation" | "lab_test" | "lab_test_item" | "xray_exam" | "ultrasound_exam" | "pharmacy_order">(),
   quantity: integer("quantity").notNull().default(1),

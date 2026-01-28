@@ -1697,62 +1697,101 @@ router.post("/api/payments", async (req: any, res) => {
       // Track which consultation order lines have been used
       const usedOrderLineIds = new Set<number>();
 
+      // Pre-fetch pharmacy-related data only if there are pharmacy items (performance optimization)
+      const hasPharmacyItems = items.some((item: any) => item.relatedType === "pharmacy_order");
+      let pharmacyOrdersMap: Map<string, any> | null = null;
+      let allServicesForPharmacy: any[] | null = null;
+      let drugMap: Map<number, any> | null = null;
+      
+      if (hasPharmacyItems) {
+        const [allPharmacyOrders, allServices, allDrugs] = await Promise.all([
+          storage.getPharmacyOrders(),
+          storage.getServices(),
+          storage.getDrugs(true)
+        ]);
+        pharmacyOrdersMap = new Map(allPharmacyOrders.map((o: any) => [o.orderId, o]));
+        allServicesForPharmacy = allServices;
+        drugMap = new Map(allDrugs.map((d: any) => [d.id, d]));
+      }
+
       for (const item of items) {
         const quantity = item.quantity || 1;
-        const amount = item.unitPrice * quantity;
         
         // Determine orderLineId - either from item directly, or find matching unpaid consultation
         let orderLineId = item.orderLineId;
         let serviceId = item.serviceId;
+        let unitPrice = item.unitPrice;
         
-        // If this is a consultation payment without orderLineId, try to find a matching unpaid consultation order line
-        if (!orderLineId && item.relatedType === "consultation") {
-          // Find an unpaid consultation order line for this patient with matching serviceId
-          const matchingOrderLine = unpaidConsultationOrderLines.find(
-            (ol: { id: number; serviceId: number; totalPrice: number; encounterId: string }) => ol.serviceId === item.serviceId && !usedOrderLineIds.has(ol.id)
-          );
-          if (matchingOrderLine) {
-            orderLineId = matchingOrderLine.id;
-            usedOrderLineIds.add(matchingOrderLine.id);
+        // Handle pharmacy_order items specially - they use drug pricing, not service pricing
+        if (item.relatedType === "pharmacy_order") {
+          // Require relatedId for pharmacy orders
+          if (!item.relatedId) {
+            throw new Error("Missing relatedId for pharmacy_order payment item");
           }
-        }
-        
-        // Also check if item.relatedId is actually an orderLine.id (numeric string) for consultation
-        if (!orderLineId && item.relatedId && item.relatedType === "consultation") {
-          const relatedIdNum = parseInt(item.relatedId);
-          if (!isNaN(relatedIdNum)) {
+          
+          // Look up the pharmacy order from pre-fetched data
+          const pharmacyOrder = pharmacyOrdersMap!.get(item.relatedId);
+          
+          if (!pharmacyOrder) {
+            throw new Error(`Pharmacy order ${item.relatedId} not found`);
+          }
+          
+          // Calculate the authoritative unit price from the drug catalog (NEVER trust client price)
+          const calculatedUnitPrice = await calculatePharmacyOrderPriceHelper(
+            pharmacyOrder,
+            allServicesForPharmacy!,
+            drugMap!,
+            storage
+          );
+          
+          // SECURITY: Always use calculated price for pharmacy orders - don't trust client-submitted price
+          unitPrice = calculatedUnitPrice;
+          
+          // serviceId can be null for pharmacy orders - they get pricing from drug catalog
+          serviceId = pharmacyOrder.serviceId || null;
+        } else {
+          // For non-pharmacy items, require a valid serviceId
+          if (!serviceId || serviceId <= 0) {
+            throw new Error(`Missing or invalid serviceId for payment item type ${item.relatedType || "unknown"}. Non-pharmacy items require a valid serviceId.`);
+          }
+          
+          // If this is a consultation payment without orderLineId, try to find a matching unpaid consultation order line
+          if (!orderLineId && item.relatedType === "consultation") {
+            // Find an unpaid consultation order line for this patient with matching serviceId
             const matchingOrderLine = unpaidConsultationOrderLines.find(
-              (ol: { id: number; serviceId: number; totalPrice: number; encounterId: string }) => ol.id === relatedIdNum && !usedOrderLineIds.has(ol.id)
+              (ol: { id: number; serviceId: number; totalPrice: number; encounterId: string }) => ol.serviceId === item.serviceId && !usedOrderLineIds.has(ol.id)
             );
             if (matchingOrderLine) {
               orderLineId = matchingOrderLine.id;
               usedOrderLineIds.add(matchingOrderLine.id);
             }
           }
-        }
-
-        // Ensure pharmacy payments always have a serviceId to satisfy NOT NULL constraint
-        if (!serviceId && item.relatedType === "pharmacy_order") {
-          const servicesList = await storage.getServices();
-          const pharmacyService = servicesList.find((s: any) => s.category === "pharmacy" && s.isActive);
-          if (pharmacyService) {
-            serviceId = pharmacyService.id;
+          
+          // Also check if item.relatedId is actually an orderLine.id (numeric string) for consultation
+          if (!orderLineId && item.relatedId && item.relatedType === "consultation") {
+            const relatedIdNum = parseInt(item.relatedId);
+            if (!isNaN(relatedIdNum)) {
+              const matchingOrderLine = unpaidConsultationOrderLines.find(
+                (ol: { id: number; serviceId: number; totalPrice: number; encounterId: string }) => ol.id === relatedIdNum && !usedOrderLineIds.has(ol.id)
+              );
+              if (matchingOrderLine) {
+                orderLineId = matchingOrderLine.id;
+                usedOrderLineIds.add(matchingOrderLine.id);
+              }
+            }
           }
         }
-
-        // If still missing serviceId, fail early with clear error
-        if (!serviceId) {
-          throw new Error(`Missing serviceId for payment item type ${item.relatedType || "unknown"}`);
-        }
+        
+        const amount = unitPrice * quantity;
         
         await storage.createPaymentItem({
           paymentId: payment.paymentId,
           orderLineId: orderLineId || undefined, // Link to order line if available
-          serviceId,
+          serviceId: serviceId || undefined, // Can be null for pharmacy_order items
           relatedId: item.relatedId,
           relatedType: item.relatedType,
           quantity,
-          unitPrice: item.unitPrice,
+          unitPrice,
           amount,
           totalPrice: amount,
         });
