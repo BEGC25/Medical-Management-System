@@ -1645,23 +1645,38 @@ return (
           {selectedLabTest && viewMode === "view" && (
             <div className="space-y-4 px-6 max-h-[calc(90vh-180px)] overflow-y-auto">
               {/* Summary Card - Single source of truth for patient/order info */}
-              {reportPatient && (
-                <SummaryCard
-                  modality="lab"
-                  patient={{
-                    name: fullName(reportPatient),
-                    patientId: reportPatient.patientId,
-                    age: reportPatient.age,
-                    gender: reportPatient.gender,
-                    phone: reportPatient.phoneNumber,
-                  }}
-                  orderId={selectedLabTest.testId || ""}
-                  priority={(selectedLabTest.priority as "routine" | "urgent" | "stat") || "routine"}
-                  paymentStatus={(selectedLabTest.paymentStatus as "paid" | "unpaid") || "unpaid"}
-                  requestedDate={selectedLabTest.requestedDate}
-                  completedDate={selectedLabTest.completedDate}
-                />
-              )}
+              {reportPatient && (() => {
+                // Compute abnormal/critical counts for SummaryCard
+                const results = parseJSON<Record<string, Record<string, string>>>(selectedLabTest.results, {});
+                const entries = Object.entries(results);
+                let criticalCount = 0;
+                let abnormalCount = 0;
+                entries.forEach(([testName, testData]) => {
+                  const severity = getTestSeverity(testName, testData, reportPatient || undefined);
+                  if (severity === "critical") criticalCount++;
+                  else if (severity === "abnormal") abnormalCount++;
+                });
+                
+                return (
+                  <SummaryCard
+                    modality="lab"
+                    patient={{
+                      name: fullName(reportPatient),
+                      patientId: reportPatient.patientId,
+                      age: reportPatient.age,
+                      gender: reportPatient.gender,
+                      phone: reportPatient.phoneNumber,
+                    }}
+                    orderId={selectedLabTest.testId || ""}
+                    priority={(selectedLabTest.priority as "routine" | "urgent" | "stat") || "routine"}
+                    paymentStatus={(selectedLabTest.paymentStatus as "paid" | "unpaid") || "unpaid"}
+                    requestedDate={selectedLabTest.requestedDate}
+                    completedDate={selectedLabTest.completedDate}
+                    abnormalCount={abnormalCount}
+                    criticalCount={criticalCount}
+                  />
+                );
+              })()}
 
               {/* Tests Ordered Row - compact with +N more */}
               <TestsOrderedRow

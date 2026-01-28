@@ -1136,23 +1136,41 @@ export default function XRay() {
             {viewMode === "view" && selectedXrayExam && (
               <div className="space-y-4 pb-6">
               {/* Summary Card - Single source of truth for patient/order info */}
-              {reportPatient && (
-                <SummaryCard
-                  modality="xray"
-                  patient={{
-                    name: fullName(reportPatient),
-                    patientId: reportPatient.patientId,
-                    age: reportPatient.age,
-                    gender: reportPatient.gender,
-                    phone: reportPatient.phoneNumber,
-                  }}
-                  orderId={selectedXrayExam.examId || ""}
-                  priority={"routine"}
-                  paymentStatus={(selectedXrayExam.paymentStatus as "paid" | "unpaid") || "unpaid"}
-                  requestedDate={selectedXrayExam.requestedDate}
-                  completedDate={selectedXrayExam.reportDate}
-                />
-              )}
+              {reportPatient && (() => {
+                // Determine severity from impression for X-ray
+                const imp = (selectedXrayExam.impression || "").toLowerCase();
+                let criticalCount = 0;
+                let abnormalCount = 0;
+                
+                if (imp.includes("fracture") || imp.includes("pneumothorax") || imp.includes("mass") || 
+                    imp.includes("acute") || imp.includes("emergency") || imp.includes("urgent") ||
+                    imp.includes("cardiomegaly") || imp.includes("consolidation") || imp.includes("effusion")) {
+                  criticalCount = 1;
+                } else if (imp.includes("mild") || imp.includes("borderline") || imp.includes("degenerative") ||
+                    imp.includes("chronic") || imp.includes("follow") || imp.includes("correlation")) {
+                  abnormalCount = 1;
+                }
+                
+                return (
+                  <SummaryCard
+                    modality="xray"
+                    patient={{
+                      name: fullName(reportPatient),
+                      patientId: reportPatient.patientId,
+                      age: reportPatient.age,
+                      gender: reportPatient.gender,
+                      phone: reportPatient.phoneNumber,
+                    }}
+                    orderId={selectedXrayExam.examId || ""}
+                    priority={"routine"}
+                    paymentStatus={(selectedXrayExam.paymentStatus as "paid" | "unpaid") || "unpaid"}
+                    requestedDate={selectedXrayExam.requestedDate}
+                    completedDate={selectedXrayExam.reportDate}
+                    abnormalCount={abnormalCount}
+                    criticalCount={criticalCount}
+                  />
+                );
+              })()}
 
               {/* Tests Ordered Row - compact exam info */}
               <TestsOrderedRow
@@ -1917,29 +1935,29 @@ export default function XRay() {
                       name="impression"
                       render={({ field }) => (
                         <FormItem>
-                          {/* Quick Templates */}
+                          {/* Quick Templates - Neutral styling with status dots */}
                           <div className="mb-3">
-                            <label className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-2 block">
+                            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2 block">
                               Quick Templates:
                             </label>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("No acute fracture, dislocation, or other bony abnormality. Normal study.")} className="border-green-300 hover:bg-green-50 text-xs justify-start">
-                                ✅ Normal Study
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("No acute fracture, dislocation, or other bony abnormality. Normal study.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                                <span className="w-2 h-2 rounded-full bg-green-500 mr-2 flex-shrink-0"></span>Normal Study
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Fracture of [specify bone] requiring orthopedic evaluation and management.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
-                                🦴 Fracture
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Fracture of [specify bone] requiring orthopedic evaluation and management.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                                <span className="w-2 h-2 rounded-full bg-red-500 mr-2 flex-shrink-0"></span>Fracture
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Degenerative changes consistent with osteoarthritis.")} className="border-amber-300 hover:bg-amber-50 text-xs justify-start">
-                                🦴 Arthritis
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Degenerative changes consistent with osteoarthritis.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 mr-2 flex-shrink-0"></span>Arthritis
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Soft tissue injury without associated bony abnormality.")} className="border-blue-300 hover:bg-blue-50 text-xs justify-start">
-                                🩹 Soft Tissue
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Soft tissue injury without associated bony abnormality.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                                <span className="w-2 h-2 rounded-full bg-blue-500 mr-2 flex-shrink-0"></span>Soft Tissue
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pneumonia/infiltrate seen in [location]. Clinical correlation advised.")} className="border-red-300 hover:bg-red-50 text-xs justify-start">
-                                🫁 Pneumonia
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Pneumonia/infiltrate seen in [location]. Clinical correlation advised.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                                <span className="w-2 h-2 rounded-full bg-red-500 mr-2 flex-shrink-0"></span>Pneumonia
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Suspicious finding requiring further evaluation.")} className="border-orange-300 hover:bg-orange-50 text-xs justify-start">
-                                ⚠️ Suspicious
+                              <Button type="button" size="sm" variant="outline" onClick={() => setImpression("Suspicious finding requiring further evaluation.")} className="border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs justify-start text-gray-700 dark:text-gray-300">
+                                <span className="w-2 h-2 rounded-full bg-orange-500 mr-2 flex-shrink-0"></span>Suspicious
                               </Button>
                             </div>
                           </div>
@@ -2001,29 +2019,29 @@ export default function XRay() {
                               Quick Add:
                             </label>
                             <div className="flex flex-wrap gap-2">
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("No further imaging required at this time.")} className="text-xs border-green-300 hover:bg-green-50">
-                                ✅ No Follow-up
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("No further imaging required at this time.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                No Follow-up
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Follow-up X-ray in 4-6 weeks to assess healing.")} className="text-xs border-blue-300 hover:bg-blue-50">
-                                📅 Follow-up XR
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Follow-up X-ray in 4-6 weeks to assess healing.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                Follow-up XR
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("CT scan recommended for better anatomical detail.")} className="text-xs border-blue-300 hover:bg-blue-50">
-                                🔍 CT Scan
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("CT scan recommended for better anatomical detail.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                CT Scan
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("MRI recommended for soft tissue evaluation.")} className="text-xs border-purple-300 hover:bg-purple-50">
-                                🧲 MRI
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("MRI recommended for soft tissue evaluation.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                MRI
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Ultrasound for further characterization.")} className="text-xs border-cyan-300 hover:bg-cyan-50">
-                                🔊 Ultrasound
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Ultrasound for further characterization.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                Ultrasound
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Clinical correlation recommended.")} className="text-xs border-amber-300 hover:bg-amber-50">
-                                💡 Clinical Correlation
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Clinical correlation recommended.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                Clinical Correlation
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Orthopedic consultation recommended.")} className="text-xs border-orange-300 hover:bg-orange-50">
-                                👨‍⚕️ Ortho Consult
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Orthopedic consultation recommended.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                Ortho Consult
                               </Button>
-                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Urgent surgical consultation required.")} className="text-xs border-red-300 hover:bg-red-50">
-                                🚨 Urgent Surgery
+                              <Button type="button" size="sm" variant="outline" onClick={() => addRecommendation("Urgent surgical consultation required.")} className="text-xs border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                <span className="w-2 h-2 rounded-full bg-red-500 mr-1.5 flex-shrink-0"></span>Urgent Surgery
                               </Button>
                             </div>
                           </div>
@@ -2036,7 +2054,7 @@ export default function XRay() {
                               size="sm" 
                               variant="outline"
                               onClick={() => startVoiceInput('recommendations')}
-                              className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                              className="border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
                             >
                               <Mic className={`w-3 h-3 mr-1 ${isRecording.recommendations ? 'animate-pulse text-red-500' : ''}`} />
                               {isRecording.recommendations ? 'Stop' : 'Dictate'}
