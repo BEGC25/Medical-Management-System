@@ -240,6 +240,17 @@ export const LAB_REFERENCE_RANGES: Record<string, Record<string, TestReferenceCo
         { ageMin: 50, ageMax: 120, gender: "male", min: 200, max: 800, unit: "ng/dL", label: "Adult Male >50" },
         { ageMin: 10, ageMax: 120, gender: "female", min: 15, max: 70, unit: "ng/dL", label: "Female" },
       ],
+    },
+    "Free Testosterone": {
+      fieldName: "Free Testosterone",
+      ranges: [
+        { ageMin: 0, ageMax: 9, gender: "all", min: 0, max: 2, unit: "pg/mL", label: "Prepubertal" },
+        { ageMin: 10, ageMax: 17, gender: "male", min: 5, max: 50, unit: "pg/mL", label: "Adolescent Male" },
+        { ageMin: 10, ageMax: 17, gender: "female", min: 0.5, max: 5, unit: "pg/mL", label: "Adolescent Female" },
+        { ageMin: 18, ageMax: 120, gender: "male", min: 50, max: 210, unit: "pg/mL", label: "Adult Male" },
+        { ageMin: 18, ageMax: 50, gender: "female", min: 1.0, max: 8.5, unit: "pg/mL", label: "Adult Female (Premenopausal)" },
+        { ageMin: 50, ageMax: 120, gender: "female", min: 0.5, max: 5.0, unit: "pg/mL", label: "Adult Female (Postmenopausal)" },
+      ],
     }
   },
   "Estrogen (E2)": {
