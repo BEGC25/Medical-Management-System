@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Encounter, OrderLine, Patient } from '@shared/schema';
 import { formatCurrency, calculateOrderLinesTotal } from '@/lib/utils';
+import { formatClinicDay, getClinicNow, getClinicDayKey } from '@/lib/date-utils';
 
 interface PrintableInvoiceProps {
   visit: Encounter;
@@ -97,11 +98,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
               )}
               <div className="flex justify-between items-center">
                 <span className="text-xs font-semibold text-gray-700">Date:</span>
-                <span className="text-xs font-medium">{new Date(visit.visitDate).toLocaleDateString('en-US', { 
-                  month: 'short', 
-                  day: 'numeric',
-                  year: 'numeric'
-                })}</span>
+                <span className="text-xs font-medium">{formatClinicDay(visit.visitDate, 'MMM d, yyyy')}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-xs font-semibold text-gray-700">Visit ID:</span>
@@ -212,11 +209,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
           <div>
             <div className="border-t-2 border-gray-800 pt-2 mt-12">
               <p className="text-sm font-bold text-gray-900">Date:</p>
-              <p className="text-xs text-gray-600">{new Date().toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric',
-                year: 'numeric'
-              })}</p>
+              <p className="text-xs text-gray-600">{formatClinicDay(getClinicDayKey(), 'MMM d, yyyy')}</p>
             </div>
           </div>
         </div>

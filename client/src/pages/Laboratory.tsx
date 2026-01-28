@@ -76,7 +76,7 @@ import {
 
 import { apiRequest } from "@/lib/queryClient";
 import { addToPendingSync } from "@/lib/offline";
-import { getDateRangeForAPI, getClinicDayKey } from "@/lib/date-utils";
+import { getDateRangeForAPI, getClinicDayKey, formatClinicDateTime } from "@/lib/date-utils";
 import { timeAgo } from "@/lib/time-utils";
 import { ResultHeaderCard, ResultSectionCard, KeyFindingCard, UnifiedModalHeader, SummaryCard, TestsOrderedRow } from "@/components/diagnostics";
 import { LAB_TEST_CATALOG, getLabCategoryLabel, type LabTestCategory } from "@/lib/diagnostic-catalog";
@@ -2248,7 +2248,7 @@ return (
               <div className="text-center mb-4">
                 <h2 className="text-2xl font-bold">Laboratory Test Request</h2>
                 <p className="text-sm text-gray-600">
-                  {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+                  {formatClinicDateTime(new Date().toISOString(), 'MMM d, yyyy hh:mm a')}
                 </p>
               </div>
               <div className="space-y-2">

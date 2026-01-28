@@ -7,6 +7,7 @@ import { LabReportPrint } from "@/components/LabReportPrint";
 import { interpretLabResults } from "@/lib/lab-interpretation";
 import { isTestAbnormal, isFieldAbnormal, getReferenceRange, getUnit, getTestCategoryLabel } from "@/lib/lab-abnormality";
 import { Printer, AlertTriangle, CheckCircle, User, Beaker, Calendar, X, Zap, Radio } from "lucide-react";
+import { formatClinicDay } from "@/lib/date-utils";
 
 type Patient = {
   firstName?: string;
@@ -34,20 +35,6 @@ function getInitials(firstName?: string, lastName?: string): string {
   const first = firstName?.charAt(0)?.toUpperCase() || "";
   const last = lastName?.charAt(0)?.toUpperCase() || "";
   return first + last || "??";
-}
-
-// Helper function to format date
-function formatDate(date?: string): string {
-  if (!date) return "—";
-  try {
-    return new Date(date).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
-  } catch {
-    return "—";
-  }
 }
 
 // Helper function to format Age/Gender consistently as "30/M"
@@ -287,12 +274,12 @@ export default function ResultDrawer(props: {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-gray-600 dark:text-gray-400">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  Requested: {formatDate(data?.requestedDate || data?.requestDate)}
+                  Requested: {formatClinicDay(data?.requestedDate || data?.requestDate, 'MMM d, yyyy')}
                 </span>
                 {(data?.completedDate || data?.completedAt || data?.reportDate) && (
                   <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                     <CheckCircle className="w-3 h-3" />
-                    Completed: {formatDate(data?.completedDate || data?.completedAt || data?.reportDate)}
+                    Completed: {formatClinicDay(data?.completedDate || data?.completedAt || data?.reportDate, 'MMM d, yyyy')}
                   </span>
                 )}
                 <span className={`font-medium ${modalityConfig[kind].textColor}`}>
@@ -585,7 +572,7 @@ export default function ResultDrawer(props: {
                   {data?.reportDate && (
                     <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
                       <span className="text-gray-600 dark:text-gray-400">Report Date:</span>
-                      <span className="font-semibold text-gray-900 dark:text-gray-100">{new Date(data.reportDate).toLocaleDateString()}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{formatClinicDay(data.reportDate)}</span>
                     </div>
                   )}
                 </div>
