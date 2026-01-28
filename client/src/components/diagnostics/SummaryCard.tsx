@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Calendar, CheckCircle2, AlertCircle, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { formatClinicDay } from "@/lib/date-utils";
 
 type Modality = "lab" | "xray" | "ultrasound";
 type Priority = "routine" | "urgent" | "stat";
@@ -79,7 +80,7 @@ function formatDate(date?: string | Date | null): string {
   if (!date) return "—";
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return formatClinicDay(d.toISOString(), 'MMM d, yyyy');
 }
 
 /** Format age/gender as "30/M" style like the print page */

@@ -18,6 +18,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { formatClinicDay } from "@/lib/date-utils";
 
 interface AnalyticsDashboardProps {
   ledgerEntries: InventoryLedger[];
@@ -74,8 +75,8 @@ export function AnalyticsDashboard({ ledgerEntries, className = "", dateFilterPr
         return "Transaction Timeline (Last 30 Days)";
       case "custom":
         if (customDateRange?.start && customDateRange?.end) {
-          const start = new Date(customDateRange.start).toLocaleDateString();
-          const end = new Date(customDateRange.end).toLocaleDateString();
+          const start = formatClinicDay(customDateRange.start);
+          const end = formatClinicDay(customDateRange.end);
           return `Transaction Timeline (${start} - ${end})`;
         }
         return "Transaction Timeline (Custom Range)";
@@ -96,7 +97,7 @@ export function AnalyticsDashboard({ ledgerEntries, className = "", dateFilterPr
     // Group by date for timeline
     const dateMap = new Map<string, { dispensed: number; received: number }>();
     ledgerEntries.forEach((entry) => {
-      const date = new Date(entry.createdAt).toLocaleDateString();
+      const date = formatClinicDay(entry.createdAt);
       const current = dateMap.get(date) || { dispensed: 0, received: 0 };
       if (entry.transactionType === "dispense") {
         current.dispensed += Math.abs(entry.totalValue || 0);

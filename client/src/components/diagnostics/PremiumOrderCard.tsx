@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Calendar, CheckCircle2, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { formatClinicDay } from "@/lib/date-utils";
 
 type Modality = "lab" | "xray" | "ultrasound";
 type OrderStatus = "completed" | "pending" | "preliminary";
@@ -70,7 +71,7 @@ function formatDate(date?: string | Date): string {
   if (!date) return "";
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "";
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return formatClinicDay(d.toISOString(), 'MMM d, yyyy');
 }
 
 export function PremiumOrderCard({

@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 import { PermissionsModal } from "@/components/PermissionsModal";
+import { formatClinicDay } from "@/lib/date-utils";
 
 // Password strength calculator
 function getPasswordStrength(password: string): { strength: 'weak' | 'medium' | 'strong', score: number } {
@@ -1010,7 +1011,7 @@ export default function UserManagement() {
                             </span>
                           </TableCell>
                           <TableCell className="text-muted-foreground tabular-nums text-sm">
-                            {new Date(u.createdAt).toLocaleDateString()}
+                            {formatClinicDay(u.createdAt)}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">

@@ -26,7 +26,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { getClinicDayKey, getClinicNow } from "@/lib/date-utils";
+import { getClinicDayKey, getClinicNow, formatClinicDay } from "@/lib/date-utils";
 import { startOfMonth, startOfWeek, subDays } from "date-fns";
 import { PremiumStatCard } from "@/components/reports/PremiumStatCard";
 import { VisitsTrendChart } from "@/components/reports/VisitsTrendChart";
@@ -119,7 +119,7 @@ function formatTimeAgo(dateString?: string): string {
     if (diffMins < 60) return `${diffMins} min ago`;
     if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
     if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
-    return past.toLocaleDateString();
+    return formatClinicDay(past);
   } catch {
     return 'Unknown';
   }
@@ -336,7 +336,7 @@ export default function Reports() {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const currentDate = new Date().toLocaleDateString();
+    const currentDate = formatClinicDay(getClinicDayKey());
 
     printWindow.document.write(`
       <!DOCTYPE html>

@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Calendar } from "lucide-react";
 import { StatusChip } from "./StatusChip";
+import { formatClinicDay } from "@/lib/date-utils";
 
 type Modality = "lab" | "xray" | "ultrasound" | "other";
 type HeaderStatus = "completed" | "preliminary" | "draft";
@@ -72,7 +73,7 @@ function formatDate(date?: string | Date): string {
   const d = typeof date === "string" ? new Date(date) : date;
   // Check if the date is valid
   if (isNaN(d.getTime())) return "";
-  return d.toLocaleDateString();
+  return formatClinicDay(d.toISOString());
 }
 
 export function ResultHeaderCard({
