@@ -1796,31 +1796,64 @@ export default function Treatment() {
       if (!selectedPatient || !currentEncounter) throw new Error("No patient or encounter");
       
       // Submit orders sequentially to avoid race conditions in pharmacy order ID generation
-      // and to provide accurate error reporting for individual orders
-      const results = [];
+      // Track successes and failures for accurate reporting
+      const results: { success: boolean; drugName: string; error?: string }[] = [];
+      
       for (const med of meds) {
-        const response = await apiRequest("POST", "/api/pharmacy-orders", {
-          patientId: selectedPatient.patientId,
-          encounterId: currentEncounter.encounterId,
-          treatmentId: savedTreatment?.treatmentId,
-          serviceId: null, // No service required - pricing comes from drug inventory
-          drugId: med.drugId,
-          drugName: med.drugName,
-          dosage: med.dosage,
-          quantity: med.quantity,
-          instructions: med.instructions,
-          route: med.route,
-          duration: med.duration,
-        });
-        results.push(response);
+        try {
+          await apiRequest("POST", "/api/pharmacy-orders", {
+            patientId: selectedPatient.patientId,
+            encounterId: currentEncounter.encounterId,
+            treatmentId: savedTreatment?.treatmentId,
+            serviceId: null, // No service required - pricing comes from drug inventory
+            drugId: med.drugId,
+            drugName: med.drugName,
+            dosage: med.dosage,
+            quantity: med.quantity,
+            instructions: med.instructions,
+            route: med.route,
+            duration: med.duration,
+          });
+          results.push({ success: true, drugName: med.drugName });
+        } catch (error: any) {
+          results.push({ 
+            success: false, 
+            drugName: med.drugName, 
+            error: error?.message || "Unknown error" 
+          });
+        }
       }
+      
       return results;
     },
-    onSuccess: () => {
+    onSuccess: (results) => {
       queryClient.invalidateQueries({ queryKey: ["/api/pharmacy-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pharmacy/prescriptions/paid"] });
-      setMedications([]);
-      toast({ title: "Medications Ordered", description: "Sent to pharmacy" });
+      
+      const successCount = results.filter(r => r.success).length;
+      const failureCount = results.filter(r => !r.success).length;
+      
+      if (failureCount === 0) {
+        // All succeeded
+        setMedications([]);
+        toast({ title: "Medications Ordered", description: "Sent to pharmacy" });
+      } else if (successCount === 0) {
+        // All failed
+        toast({ 
+          title: "Error", 
+          description: "Failed to submit medications", 
+          variant: "destructive" 
+        });
+      } else {
+        // Partial success
+        const failedDrugs = results.filter(r => !r.success).map(r => r.drugName).join(", ");
+        setMedications([]); // Clear all since some were submitted
+        toast({ 
+          title: "Partial Success", 
+          description: `${successCount} medication(s) ordered. Failed: ${failedDrugs}`,
+          variant: "destructive" 
+        });
+      }
     },
     onError: (e: any) =>
       toast({ title: "Error", description: e?.message || "Failed to submit medications", variant: "destructive" }),
