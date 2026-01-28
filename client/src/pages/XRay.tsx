@@ -1178,17 +1178,12 @@ export default function XRay() {
                     completedDate={selectedXrayExam.reportDate}
                     abnormalCount={abnormalCount}
                     criticalCount={criticalCount}
+                    examType={selectedXrayExam.examType || undefined}
+                    bodyPart={selectedXrayExam.bodyPart || undefined}
+                    views={selectedXrayExam.viewDescriptions || undefined}
                   />
                 );
               })()}
-
-              {/* Tests Ordered Row - compact exam info */}
-              <TestsOrderedRow
-                modality="xray"
-                examType={selectedXrayExam.examType || undefined}
-                bodyPart={selectedXrayExam.bodyPart || undefined}
-                views={selectedXrayExam.viewDescriptions || undefined}
-              />
 
               {/* Radiological Findings Section */}
 
@@ -1282,7 +1277,7 @@ export default function XRay() {
             {/* EDIT MODE */}
             {viewMode === "edit" && (
             <>
-              {/* Summary Card for EDIT mode */}
+              {/* Summary Card for EDIT mode - includes exam info */}
               {reportPatient && selectedXrayExam && (
                 <SummaryCard
                   modality="xray"
@@ -1297,27 +1292,22 @@ export default function XRay() {
                   priority={"routine"}
                   paymentStatus={(selectedXrayExam.paymentStatus as "paid" | "unpaid") || "unpaid"}
                   requestedDate={selectedXrayExam.requestedDate}
+                  examType={selectedXrayExam?.examType || undefined}
+                  bodyPart={selectedXrayExam?.bodyPart || undefined}
+                  views={selectedXrayExam?.viewDescriptions || undefined}
                 />
               )}
-
-              {/* Tests Ordered Row */}
-              <TestsOrderedRow
-                modality="xray"
-                examType={selectedXrayExam?.examType || undefined}
-                bodyPart={selectedXrayExam?.bodyPart || undefined}
-                views={selectedXrayExam?.viewDescriptions || undefined}
-              />
               
             <Form {...resultsForm}>
               <form onSubmit={resultsForm.handleSubmit(onSubmitResults)} className="space-y-6 pb-6">
               
-              {/* Attachments Accordion - collapsed by default, calmer styling */}
-              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200/70 dark:border-gray-700/70 rounded-lg overflow-hidden">
+              {/* Attachments Accordion - collapsed by default, quiet styling */}
+              <Accordion type="single" collapsible defaultValue="" className="border border-gray-200/50 dark:border-gray-700/50 rounded-lg overflow-hidden">
                 <AccordionItem value="attachments" className="border-0">
-                  <AccordionTrigger className="px-3 py-2.5 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:no-underline">
+                  <AccordionTrigger className="px-3 py-2 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Paperclip className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                      <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
+                      <Paperclip className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                      <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
                         Attachments{uploadedImages.length > 0 ? ` (${uploadedImages.length})` : " (Optional)"}
                       </span>
                     </div>
@@ -1462,11 +1452,15 @@ export default function XRay() {
                     
                     {/* EXTREMITY X-RAY FINDING BUILDER */}
                     {selectedXrayExam?.examType === 'extremities' && (
-                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Zap className="w-5 h-5 text-blue-600" />
-                          <h4 className="font-semibold text-blue-900">Quick Findings Builder (Click to Add)</h4>
-                        </div>
+                      <Accordion type="single" collapsible defaultValue="" className="mb-4 border border-gray-200/50 dark:border-gray-700/50 rounded-lg overflow-hidden">
+                        <AccordionItem value="quick-findings" className="border-0">
+                          <AccordionTrigger className="px-4 py-2.5 hover:bg-cyan-50/50 dark:hover:bg-cyan-900/20 hover:no-underline bg-gradient-to-br from-blue-50/30 to-cyan-50/30 dark:from-blue-950/10 dark:to-cyan-950/10">
+                            <div className="flex items-center gap-2">
+                              <Zap className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Findings Builder</span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 pb-4">
                         
                         {/* Bone Assessment */}
                         <div className="mb-3">
@@ -1610,16 +1604,22 @@ export default function XRay() {
                             </Button>
                           </div>
                         </div>
-                      </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
                     )}
                     
                     {/* CHEST X-RAY FINDING BUILDER */}
                     {selectedXrayExam?.examType === 'chest' && (
-                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Zap className="w-5 h-5 text-blue-600" />
-                          <h4 className="font-semibold text-blue-900">Quick Findings Builder (Click to Add)</h4>
-                        </div>
+                      <Accordion type="single" collapsible defaultValue="" className="mb-4 border border-gray-200/50 dark:border-gray-700/50 rounded-lg overflow-hidden">
+                        <AccordionItem value="quick-findings" className="border-0">
+                          <AccordionTrigger className="px-4 py-2.5 hover:bg-cyan-50/50 dark:hover:bg-cyan-900/20 hover:no-underline bg-gradient-to-br from-blue-50/30 to-cyan-50/30 dark:from-blue-950/10 dark:to-cyan-950/10">
+                            <div className="flex items-center gap-2">
+                              <Zap className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Findings Builder</span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 pb-4">
                         
                         {/* Lungs */}
                         <div className="mb-3">
@@ -1680,16 +1680,22 @@ export default function XRay() {
                             </Button>
                           </div>
                         </div>
-                      </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
                     )}
                     
                     {/* ABDOMINAL X-RAY FINDING BUILDER */}
                     {selectedXrayExam?.examType === 'abdomen' && (
-                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Zap className="w-5 h-5 text-blue-600" />
-                          <h4 className="font-semibold text-blue-900">Quick Findings Builder (Click to Add)</h4>
-                        </div>
+                      <Accordion type="single" collapsible defaultValue="" className="mb-4 border border-gray-200/50 dark:border-gray-700/50 rounded-lg overflow-hidden">
+                        <AccordionItem value="quick-findings" className="border-0">
+                          <AccordionTrigger className="px-4 py-2.5 hover:bg-cyan-50/50 dark:hover:bg-cyan-900/20 hover:no-underline bg-gradient-to-br from-blue-50/30 to-cyan-50/30 dark:from-blue-950/10 dark:to-cyan-950/10">
+                            <div className="flex items-center gap-2">
+                              <Zap className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Findings Builder</span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 pb-4">
                         
                         {/* Bowel Gas */}
                         <div className="mb-3">
@@ -1747,16 +1753,22 @@ export default function XRay() {
                             </Button>
                           </div>
                         </div>
-                      </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
                     )}
                     
                     {/* SPINE X-RAY FINDING BUILDER */}
                     {selectedXrayExam?.examType === 'spine' && (
-                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Zap className="w-5 h-5 text-blue-600" />
-                          <h4 className="font-semibold text-blue-900">Quick Findings Builder (Click to Add)</h4>
-                        </div>
+                      <Accordion type="single" collapsible defaultValue="" className="mb-4 border border-gray-200/50 dark:border-gray-700/50 rounded-lg overflow-hidden">
+                        <AccordionItem value="quick-findings" className="border-0">
+                          <AccordionTrigger className="px-4 py-2.5 hover:bg-cyan-50/50 dark:hover:bg-cyan-900/20 hover:no-underline bg-gradient-to-br from-blue-50/30 to-cyan-50/30 dark:from-blue-950/10 dark:to-cyan-950/10">
+                            <div className="flex items-center gap-2">
+                              <Zap className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Findings Builder</span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 pb-4">
                         
                         <div className="mb-3">
                           <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
@@ -1805,16 +1817,22 @@ export default function XRay() {
                             </Button>
                           </div>
                         </div>
-                      </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
                     )}
                     
                     {/* SKULL X-RAY FINDING BUILDER */}
                     {selectedXrayExam?.examType === 'skull' && (
-                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Zap className="w-5 h-5 text-blue-600" />
-                          <h4 className="font-semibold text-blue-900">Quick Findings Builder (Click to Add)</h4>
-                        </div>
+                      <Accordion type="single" collapsible defaultValue="" className="mb-4 border border-gray-200/50 dark:border-gray-700/50 rounded-lg overflow-hidden">
+                        <AccordionItem value="quick-findings" className="border-0">
+                          <AccordionTrigger className="px-4 py-2.5 hover:bg-cyan-50/50 dark:hover:bg-cyan-900/20 hover:no-underline bg-gradient-to-br from-blue-50/30 to-cyan-50/30 dark:from-blue-950/10 dark:to-cyan-950/10">
+                            <div className="flex items-center gap-2">
+                              <Zap className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Findings Builder</span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 pb-4">
                         
                         <div className="mb-3">
                           <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
@@ -1846,16 +1864,22 @@ export default function XRay() {
                             </Button>
                           </div>
                         </div>
-                      </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
                     )}
                     
                     {/* PELVIC X-RAY FINDING BUILDER */}
                     {selectedXrayExam?.examType === 'pelvis' && (
-                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Zap className="w-5 h-5 text-blue-600" />
-                          <h4 className="font-semibold text-blue-900">Quick Findings Builder (Click to Add)</h4>
-                        </div>
+                      <Accordion type="single" collapsible defaultValue="" className="mb-4 border border-gray-200/50 dark:border-gray-700/50 rounded-lg overflow-hidden">
+                        <AccordionItem value="quick-findings" className="border-0">
+                          <AccordionTrigger className="px-4 py-2.5 hover:bg-cyan-50/50 dark:hover:bg-cyan-900/20 hover:no-underline bg-gradient-to-br from-blue-50/30 to-cyan-50/30 dark:from-blue-950/10 dark:to-cyan-950/10">
+                            <div className="flex items-center gap-2">
+                              <Zap className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Findings Builder</span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 pb-4">
                         
                         <div className="mb-3">
                           <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2 block">
@@ -1887,7 +1911,9 @@ export default function XRay() {
                             </Button>
                           </div>
                         </div>
-                      </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
                     )}
                     
                     <div className="mb-2">
