@@ -131,46 +131,12 @@ export default function ResultDrawer(props: {
 }) {
   const { open, onOpenChange, kind, data, patient, resultFields, userRole } = props;
   const [showClinicalPrint, setShowClinicalPrint] = React.useState(false);
+  const [includeClinicalInterpretation, setIncludeClinicalInterpretation] = React.useState(true);
 
   // Common bits
   const paid = (data?.paymentStatus ?? data?.isPaid) === "paid" || data?.isPaid === 1 || data?.isPaid === true;
   const completed = data?.status === "completed";
   const orderLineId = data?.orderLine?.id ?? data?.orderLineId ?? data?.orderId;
-
-  // LAB specifics
-  const tests = React.useMemo<string[]>(
-    () => parseJSON<string[]>(data?.tests, Array.isArray(data?.tests) ? data?.tests : []),
-    [data]
-  );
-  const results = React.useMemo<Record<string, Record<string, string>>>(
-    () => parseJSON<Record<string, Record<string, string>>>(data?.results, {}),
-    [data]
-  );
-
-  const copySummary = () => {
-    if (!props.onCopyToNotes) return;
-    let txt = "";
-    if (kind === "lab") {
-      txt += `Lab (${data?.category ?? "—"} ${data?.testId ?? ""}):\n`;
-      for (const [panel, fields] of Object.entries(results || {})) {
-        txt += `• ${panel}\n`;
-        for (const [name, value] of Object.entries(fields || {})) {
-          txt += `   - ${name}: ${value}\n`;
-        }
-      }
-    } else if (kind === "xray") {
-      txt += `X-Ray (${data?.examType ?? data?.bodyPart ?? ""} ${data?.examId ?? ""}):\n`;
-      if (data?.viewDescriptions) txt += `View Descriptions: ${data.viewDescriptions}\n`;
-      if (data?.findings) txt += `Findings: ${data.findings}\n`;
-      if (data?.impression) txt += `Impression: ${data.impression}\n`;
-      if (data?.recommendations) txt += `Recommendations: ${data.recommendations}\n`;
-    } else if (kind === "ultrasound") {
-      txt += `Ultrasound (${data?.examType ?? ""} ${data?.examId ?? ""}):\n`;
-      if (data?.findings) txt += `Findings: ${data.findings}\n`;
-      if (data?.impression) txt += `Impression: ${data.impression}\n`;
-    }
-    props.onCopyToNotes?.(txt.trim());
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -182,7 +148,7 @@ export default function ResultDrawer(props: {
         {/* ===== UNIFIED FIXED HEADER ===== */}
         {kind && (
           <div className={`shrink-0 border-b ${modalityConfig[kind].borderColor} bg-gradient-to-r ${modalityConfig[kind].bgGradient}`}>
-            {/* Header Row: Close button + Title */}
+            {/* Header Row: Close button + Title + Print (for doctors) */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-lg ${modalityConfig[kind].iconBg} flex items-center justify-center`}>
@@ -197,13 +163,53 @@ export default function ResultDrawer(props: {
                   </span>
                 </div>
               </div>
-              <button
-                onClick={() => onOpenChange(false)}
-                className="p-1.5 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition-colors"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              
+              {/* Right side: Print button (doctors only) + Close */}
+              <div className="flex items-center gap-3">
+                {/* Print button for lab results (doctors/admins only) */}
+                {kind === "lab" && completed && (userRole === "doctor" || userRole === "admin") && (
+                  <div className="flex items-center gap-3 mr-2">
+                    {/* Toggle for clinical interpretation */}
+                    <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={includeClinicalInterpretation}
+                        onChange={(e) => setIncludeClinicalInterpretation(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                        aria-label="Include clinical interpretation in print"
+                      />
+                      <span className="font-medium">Include Interpretation</span>
+                    </label>
+                    
+                    {/* Print button */}
+                    <Button 
+                      variant="default"
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all"
+                      onClick={() => {
+                        setShowClinicalPrint(true);
+                        setTimeout(() => {
+                          const done = () => setShowClinicalPrint(false);
+                          window.addEventListener("afterprint", done, { once: true });
+                          window.print();
+                        }, 100);
+                      }}
+                    >
+                      <Printer className="w-4 h-4 mr-1.5" />
+                      Print
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Close button */}
+                <button
+                  onClick={() => onOpenChange(false)}
+                  className="p-1.5 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             
             {/* Patient Summary "Scan Zone" Header */}
@@ -675,27 +681,6 @@ export default function ResultDrawer(props: {
           {typeof orderLineId === "number" && props.onAddToSummary && (
             <Button variant="outline" size="sm" onClick={() => props.onAddToSummary!(orderLineId, true)}>Add to Summary</Button>
           )}
-          {props.onCopyToNotes && (
-            <Button variant="outline" size="sm" onClick={copySummary}>Copy to Notes</Button>
-          )}
-          {/* Print button for lab results */}
-          {kind === "lab" && completed && (userRole === "doctor" || userRole === "admin") && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                setShowClinicalPrint(true);
-                setTimeout(() => {
-                  const done = () => setShowClinicalPrint(false);
-                  window.addEventListener("afterprint", done, { once: true });
-                  window.print();
-                }, 100);
-              }}
-            >
-              <Printer className="w-4 h-4 mr-1.5" />
-              Print
-            </Button>
-          )}
           <div className="ml-auto" />
           <Button variant="default" size="sm" onClick={() => onOpenChange(false)}>Close</Button>
         </div>
@@ -719,7 +704,7 @@ export default function ResultDrawer(props: {
           }}
           patient={patient}
           resultFields={resultFields}
-          includeInterpretation={true}
+          includeInterpretation={includeClinicalInterpretation}
         />
       )}
     </Dialog>
