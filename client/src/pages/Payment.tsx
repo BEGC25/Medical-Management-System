@@ -61,7 +61,7 @@ interface AllUnpaidOrders {
 }
 
 interface Service {
-  id: number;
+  id?: number; // Can be undefined/null for pharmacy items (use drug pricing instead)
   name: string;
   category: string;
   description: string;
@@ -1391,8 +1391,9 @@ export default function Payment() {
                           const displayPrice = order.price || 0;
                           
                           // Create service object from order data
+                          // For pharmacy orders, serviceId can be null/undefined (uses drug pricing)
                           const serviceForPayment = {
-                            id: order.serviceId || 0,
+                            id: order.serviceId, // Don't coerce to 0 - null is valid for pharmacy
                             name: order.serviceName || order.description,
                             category: order.type === 'lab_test_item' ? 'laboratory' : 
                                      order.type === 'xray_exam' ? 'radiology' :
