@@ -977,19 +977,17 @@ export class MemStorage implements IStorage {
       patient: patients
     })
     .from(labTests)
-    .leftJoin(patients, and(
+    .innerJoin(patients, and(
       eq(labTests.patientId, patients.patientId),
       eq(patients.isDeleted, 0)
     ))
     .where(eq(labTests.paymentStatus, "unpaid"))
     .orderBy(desc(labTests.createdAt));
 
-    return results
-      .filter(result => result.patient != null)
-      .map(result => ({
-        ...result.labTest,
-        patient: result.patient || undefined
-      }));
+    return results.map(result => ({
+      ...result.labTest,
+      patient: result.patient
+    }));
   }
 
   async updateLabTest(testId: string, data: Partial<schema.LabTest>): Promise<schema.LabTest> {
@@ -1122,19 +1120,17 @@ export class MemStorage implements IStorage {
       patient: patients
     })
     .from(xrayExams)
-    .leftJoin(patients, and(
+    .innerJoin(patients, and(
       eq(xrayExams.patientId, patients.patientId),
       eq(patients.isDeleted, 0)
     ))
     .where(eq(xrayExams.paymentStatus, "unpaid"))
     .orderBy(desc(xrayExams.createdAt));
 
-    return results
-      .filter(result => result.patient != null)
-      .map(result => ({
-        ...result.xrayExam,
-        patient: result.patient || undefined
-      }));
+    return results.map(result => ({
+      ...result.xrayExam,
+      patient: result.patient
+    }));
   }
 
   async updateXrayExam(examId: string, data: Partial<schema.XrayExam>): Promise<schema.XrayExam> {
@@ -1246,19 +1242,17 @@ export class MemStorage implements IStorage {
       patient: patients
     })
     .from(ultrasoundExams)
-    .leftJoin(patients, and(
+    .innerJoin(patients, and(
       eq(ultrasoundExams.patientId, patients.patientId),
       eq(patients.isDeleted, 0)
     ))
     .where(eq(ultrasoundExams.paymentStatus, "unpaid"))
     .orderBy(desc(ultrasoundExams.createdAt));
 
-    return results
-      .filter(result => result.patient != null)
-      .map(result => ({
-        ...result.ultrasoundExam,
-        patient: result.patient || undefined
-      }));
+    return results.map(result => ({
+      ...result.ultrasoundExam,
+      patient: result.patient
+    }));
   }
 
   async updateUltrasoundExam(examId: string, data: Partial<schema.UltrasoundExam>): Promise<schema.UltrasoundExam> {
@@ -2478,7 +2472,7 @@ export class MemStorage implements IStorage {
       patient: patients
     })
     .from(pharmacyOrders)
-    .leftJoin(patients, and(
+    .innerJoin(patients, and(
       eq(pharmacyOrders.patientId, patients.patientId),
       eq(patients.isDeleted, 0)
     ))
@@ -2488,12 +2482,10 @@ export class MemStorage implements IStorage {
     ))
     .orderBy(desc(pharmacyOrders.createdAt));
 
-    return results
-      .filter(result => result.patient != null)
-      .map(result => ({
-        ...result.pharmacyOrder,
-        patient: result.patient || undefined
-      }));
+    return results.map(result => ({
+      ...result.pharmacyOrder,
+      patient: result.patient
+    }));
   }
 
   async updatePharmacyOrder(orderId: string, data: Partial<schema.PharmacyOrder>): Promise<schema.PharmacyOrder> {

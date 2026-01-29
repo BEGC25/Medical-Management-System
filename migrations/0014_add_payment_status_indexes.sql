@@ -10,5 +10,7 @@ CREATE INDEX IF NOT EXISTS "idx_xray_exams_payment_status" ON "xray_exams" ("pay
 -- Add index on ultrasound_exams.payment_status for efficient filtering of unpaid ultrasound exams
 CREATE INDEX IF NOT EXISTS "idx_ultrasound_exams_payment_status" ON "ultrasound_exams" ("payment_status");
 
--- Add index on pharmacy_orders.payment_status for efficient filtering of unpaid pharmacy orders
-CREATE INDEX IF NOT EXISTS "idx_pharmacy_orders_payment_status" ON "pharmacy_orders" ("payment_status");
+-- Add composite index on pharmacy_orders for efficient filtering of unpaid prescribed orders
+-- The composite index on (payment_status, status) is more efficient than a single-column index
+-- because the query filters by both columns: WHERE payment_status = 'unpaid' AND status = 'prescribed'
+CREATE INDEX IF NOT EXISTS "idx_pharmacy_orders_payment_status_status" ON "pharmacy_orders" ("payment_status", "status");
