@@ -6,8 +6,11 @@ This migration fixes the `finance_vw_daily_cash` view to correctly categorize ph
 ## Background
 The original view in migration 0007 was missing a case for `pharmacy_order` in the department categorization, causing pharmacy payments to appear under "Other" in the Daily Cash Report.
 
+## Important Note
+This migration is required for existing databases that have already run migration 0007. The original 0007 migration files are intentionally kept unchanged to preserve migration history integrity.
+
 ## Changes
-- Updated the `finance_vw_daily_cash` view to add:
+- Recreates the `finance_vw_daily_cash` view with the added case:
   ```sql
   WHEN pi.related_type = 'pharmacy_order' THEN 'pharmacy'
   ```

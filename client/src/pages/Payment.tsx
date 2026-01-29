@@ -1812,8 +1812,8 @@ export default function Payment() {
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold">SSP {(item.totalPrice || item.amount || item.unitPrice).toLocaleString()}</p>
-                          {item.quantity > 1 && (
+                          <p className="font-semibold">SSP {(item.totalPrice ?? item.amount ?? item.unitPrice).toLocaleString()}</p>
+                          {item.quantity > 1 && item.unitPrice != null && (
                             <p className="text-xs text-gray-500">Qty: {item.quantity} × SSP {item.unitPrice.toLocaleString()}</p>
                           )}
                         </div>
