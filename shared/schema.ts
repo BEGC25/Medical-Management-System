@@ -166,7 +166,7 @@ export const resultsRouting = sqliteTable("results_routing", {
 export const orderLines = sqliteTable("order_lines", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   encounterId: text("encounter_id").notNull(),
-  serviceId: integer("service_id"), // Optional - null for pharmacy_order items (priced via drug catalog)
+  serviceId: integer("service_id").notNull(),
   relatedId: text("related_id"), // ID of lab test, x-ray, ultrasound, etc.
   relatedType: text("related_type").$type<"consultation" | "lab_test" | "xray_exam" | "ultrasound_exam" | "pharmacy_order" | "procedure">(),
   description: text("description").notNull(),
