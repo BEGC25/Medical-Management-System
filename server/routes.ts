@@ -2505,16 +2505,35 @@ router.post("/api/pharmacy-orders", async (req: any, res) => {
     if (pharmacyOrder.encounterId) {
       try {
         // Fetch necessary data for price calculation
-        const [services, drugs] = await Promise.all([
-          storage.getServices(),
+        // Only fetch what's needed to avoid performance issues
+        const [pharmacyServices, drugs] = await Promise.all([
+          storage.getServicesByCategory("pharmacy"),
           storage.getDrugs(true)
         ]);
         const drugMap = new Map(drugs.map((d: any) => [d.id, d]));
         
+        // Find pharmacy service for serviceId (use the one linked to the order if available)
+        let serviceId = pharmacyOrder.serviceId;
+        let service = null;
+        
+        if (serviceId) {
+          service = pharmacyServices.find((s: any) => s.id === serviceId);
+        }
+        
+        if (!service) {
+          // Fallback: find any active pharmacy service
+          service = pharmacyServices.find((s: any) => s.isActive);
+        }
+        
+        if (!service) {
+          console.warn(`[PHARMACY-ORDER] No active pharmacy service found for order ${pharmacyOrder.orderId}`);
+          throw new Error("No active pharmacy service found. Please create a pharmacy service in Service Management.");
+        }
+        
         // Calculate unit price using the helper function
         const unitPrice = await calculatePharmacyOrderPriceHelper(
           pharmacyOrder,
-          services,
+          pharmacyServices,
           drugMap,
           storage
         );
@@ -2531,18 +2550,10 @@ router.post("/api/pharmacy-orders", async (req: any, res) => {
           description += ` (${pharmacyOrder.dosage})`;
         }
         
-        // Find pharmacy service for serviceId (use the one linked to the order if available)
-        let serviceId = pharmacyOrder.serviceId;
-        if (!serviceId) {
-          // Fallback: find a pharmacy service
-          const pharmacyService = services.find((s: any) => s.category === "pharmacy");
-          serviceId = pharmacyService?.id || null;
-        }
-        
-        // Create order line
+        // Create order line (status will use default from schema)
         const orderLineData = {
           encounterId: pharmacyOrder.encounterId,
-          serviceId: serviceId || 0, // Use 0 as fallback if no service found
+          serviceId: service.id,
           relatedType: "pharmacy_order" as const,
           relatedId: pharmacyOrder.orderId,
           description,
@@ -2550,7 +2561,6 @@ router.post("/api/pharmacy-orders", async (req: any, res) => {
           unitPriceSnapshot: unitPrice,
           totalPrice,
           department: "pharmacy" as const,
-          status: "requested" as const,
           orderedBy: req.user?.username || req.user?.email || "System",
         };
         
