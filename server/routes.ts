@@ -2509,10 +2509,11 @@ router.post("/api/pharmacy-orders", async (req: any, res) => {
         const drugMap = new Map(drugs.map((d: any) => [d.id, d]));
         
         // Calculate unit price using the helper function
-        // Empty services array - pharmacy doesn't use services
+        // Pass empty services array to ensure pharmacy pricing comes from drug inventory
+        // (Per PR #481 architecture: pharmacy orders use drug catalog pricing, not services table)
         const unitPrice = await calculatePharmacyOrderPriceHelper(
           pharmacyOrder,
-          [], // Empty services array - pharmacy doesn't use services
+          [], // Empty services array - pharmacy pricing from drug inventory, not services
           drugMap,
           storage
         );
