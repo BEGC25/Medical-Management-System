@@ -142,8 +142,8 @@ async function backfillPharmacyOrderLines() {
   }
 }
 
-// Run if executed directly
-if (require.main === module) {
+// Run if executed directly (ES module version)
+if (import.meta.url === `file://${process.argv[1]}`) {
   backfillPharmacyOrderLines()
     .then(() => {
       console.log('[Backfill] Success!');
