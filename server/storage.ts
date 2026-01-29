@@ -220,6 +220,7 @@ export interface IStorage {
   createLabTest(data: schema.InsertLabTest): Promise<schema.LabTest>;
   getLabTests(status?: string, date?: string, startDate?: string, endDate?: string): Promise<(schema.LabTest & { patient?: schema.Patient })[]>;
   getLabTestsByPatient(patientId: string): Promise<schema.LabTest[]>;
+  getUnpaidLabTests(): Promise<(schema.LabTest & { patient?: schema.Patient })[]>;
   updateLabTest(testId: string, data: Partial<schema.LabTest>): Promise<schema.LabTest>;
   updateLabTestAttachments(testId: string, attachments: any[]): Promise<schema.LabTest>;
   deleteLabTest(testId: string): Promise<boolean>;
@@ -228,6 +229,7 @@ export interface IStorage {
   createXrayExam(data: schema.InsertXrayExam): Promise<schema.XrayExam>;
   getXrayExams(status?: string, date?: string, startDate?: string, endDate?: string): Promise<(schema.XrayExam & { patient?: schema.Patient })[]>;
   getXrayExamsByPatient(patientId: string): Promise<schema.XrayExam[]>;
+  getUnpaidXrayExams(): Promise<(schema.XrayExam & { patient?: schema.Patient })[]>;
   updateXrayExam(examId: string, data: Partial<schema.XrayExam>): Promise<schema.XrayExam>;
   deleteXrayExam(examId: string): Promise<boolean>;
 
@@ -235,6 +237,7 @@ export interface IStorage {
   createUltrasoundExam(data: schema.InsertUltrasoundExam): Promise<schema.UltrasoundExam>;
   getUltrasoundExams(status?: string, startDate?: string, endDate?: string): Promise<schema.UltrasoundExam[]>;
   getUltrasoundExamsByPatient(patientId: string): Promise<schema.UltrasoundExam[]>;
+  getUnpaidUltrasoundExams(): Promise<(schema.UltrasoundExam & { patient?: schema.Patient })[]>;
   updateUltrasoundExam(examId: string, data: Partial<schema.UltrasoundExam>): Promise<schema.UltrasoundExam>;
   deleteUltrasoundExam(examId: string): Promise<boolean>;
 
@@ -242,6 +245,7 @@ export interface IStorage {
   createPharmacyOrder(data: schema.InsertPharmacyOrder): Promise<schema.PharmacyOrder>;
   getPharmacyOrders(status?: string): Promise<schema.PharmacyOrder[]>;
   getPharmacyOrdersByPatient(patientId: string): Promise<schema.PharmacyOrder[]>;
+  getUnpaidPharmacyOrders(): Promise<(schema.PharmacyOrder & { patient?: schema.Patient })[]>;
   updatePharmacyOrder(orderId: string, data: Partial<schema.PharmacyOrder>): Promise<schema.PharmacyOrder>;
   dispensePharmacyOrder(orderId: string): Promise<schema.PharmacyOrder>;
 
@@ -967,6 +971,27 @@ export class MemStorage implements IStorage {
       .orderBy(desc(labTests.requestedDate));
   }
 
+  async getUnpaidLabTests(): Promise<(schema.LabTest & { patient?: schema.Patient })[]> {
+    const results = await db.select({
+      labTest: labTests,
+      patient: patients
+    })
+    .from(labTests)
+    .leftJoin(patients, and(
+      eq(labTests.patientId, patients.patientId),
+      eq(patients.isDeleted, 0)
+    ))
+    .where(eq(labTests.paymentStatus, "unpaid"))
+    .orderBy(desc(labTests.createdAt));
+
+    return results
+      .filter(result => result.patient != null)
+      .map(result => ({
+        ...result.labTest,
+        patient: result.patient || undefined
+      }));
+  }
+
   async updateLabTest(testId: string, data: Partial<schema.LabTest>): Promise<schema.LabTest> {
     if (!testId) {
       throw new Error("Lab test ID is required");
@@ -1091,6 +1116,27 @@ export class MemStorage implements IStorage {
       .orderBy(desc(xrayExams.requestedDate));
   }
 
+  async getUnpaidXrayExams(): Promise<(schema.XrayExam & { patient?: schema.Patient })[]> {
+    const results = await db.select({
+      xrayExam: xrayExams,
+      patient: patients
+    })
+    .from(xrayExams)
+    .leftJoin(patients, and(
+      eq(xrayExams.patientId, patients.patientId),
+      eq(patients.isDeleted, 0)
+    ))
+    .where(eq(xrayExams.paymentStatus, "unpaid"))
+    .orderBy(desc(xrayExams.createdAt));
+
+    return results
+      .filter(result => result.patient != null)
+      .map(result => ({
+        ...result.xrayExam,
+        patient: result.patient || undefined
+      }));
+  }
+
   async updateXrayExam(examId: string, data: Partial<schema.XrayExam>): Promise<schema.XrayExam> {
     if (!examId) {
       throw new Error("X-ray exam ID is required");
@@ -1192,6 +1238,27 @@ export class MemStorage implements IStorage {
     return await db.select().from(ultrasoundExams)
       .where(eq(ultrasoundExams.patientId, patientId))
       .orderBy(desc(ultrasoundExams.requestedDate));
+  }
+
+  async getUnpaidUltrasoundExams(): Promise<(schema.UltrasoundExam & { patient?: schema.Patient })[]> {
+    const results = await db.select({
+      ultrasoundExam: ultrasoundExams,
+      patient: patients
+    })
+    .from(ultrasoundExams)
+    .leftJoin(patients, and(
+      eq(ultrasoundExams.patientId, patients.patientId),
+      eq(patients.isDeleted, 0)
+    ))
+    .where(eq(ultrasoundExams.paymentStatus, "unpaid"))
+    .orderBy(desc(ultrasoundExams.createdAt));
+
+    return results
+      .filter(result => result.patient != null)
+      .map(result => ({
+        ...result.ultrasoundExam,
+        patient: result.patient || undefined
+      }));
   }
 
   async updateUltrasoundExam(examId: string, data: Partial<schema.UltrasoundExam>): Promise<schema.UltrasoundExam> {
@@ -2403,6 +2470,30 @@ export class MemStorage implements IStorage {
     return await db.select().from(pharmacyOrders)
       .where(eq(pharmacyOrders.patientId, patientId))
       .orderBy(desc(pharmacyOrders.createdAt));
+  }
+
+  async getUnpaidPharmacyOrders(): Promise<(schema.PharmacyOrder & { patient?: schema.Patient })[]> {
+    const results = await db.select({
+      pharmacyOrder: pharmacyOrders,
+      patient: patients
+    })
+    .from(pharmacyOrders)
+    .leftJoin(patients, and(
+      eq(pharmacyOrders.patientId, patients.patientId),
+      eq(patients.isDeleted, 0)
+    ))
+    .where(and(
+      eq(pharmacyOrders.paymentStatus, "unpaid"),
+      eq(pharmacyOrders.status, "prescribed")
+    ))
+    .orderBy(desc(pharmacyOrders.createdAt));
+
+    return results
+      .filter(result => result.patient != null)
+      .map(result => ({
+        ...result.pharmacyOrder,
+        patient: result.patient || undefined
+      }));
   }
 
   async updatePharmacyOrder(orderId: string, data: Partial<schema.PharmacyOrder>): Promise<schema.PharmacyOrder> {

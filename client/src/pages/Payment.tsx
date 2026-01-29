@@ -297,6 +297,8 @@ export default function Payment() {
       if (!response.ok) throw new Error('Failed to load unpaid orders');
       return response.json();
     },
+    refetchInterval: 30000,         // Auto-refresh every 30 seconds
+    refetchOnWindowFocus: true,     // Instant refresh when tab gains focus
   });
 
   // Get payment history using preset-based filtering

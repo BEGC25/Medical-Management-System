@@ -2165,19 +2165,15 @@ async function calculatePharmacyOrderPriceHelper(
 
 router.get("/api/unpaid-orders/all", async (_req, res) => {
   try {
-    const [labTests, xrayExams, ultrasoundExams, pharmacyOrders, patients, services, drugs] =
+    const [unpaidLabTests, unpaidXrayExams, unpaidUltrasoundExams, unpaidPharmacyOrders, services, drugs] =
       await Promise.all([
-        storage.getLabTests(),
-        storage.getXrayExams(),
-        storage.getUltrasoundExams(),
-        storage.getPharmacyOrders(),
-        storage.getPatients(),
+        storage.getUnpaidLabTests(),
+        storage.getUnpaidXrayExams(),
+        storage.getUnpaidUltrasoundExams(),
+        storage.getUnpaidPharmacyOrders(),
         storage.getServices(),
         storage.getDrugs(true), // Get active drugs only
       ]);
-
-    const patientMap = new Map();
-    patients.forEach((p) => patientMap.set(p.patientId, p));
 
     const drugMap = new Map();
     drugs.forEach((d) => drugMap.set(d.id, d));
@@ -2213,8 +2209,7 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
     };
 
     const result = {
-      laboratory: labTests
-        .filter((test) => test.paymentStatus === "unpaid")
+      laboratory: unpaidLabTests
         .map((test) => {
           const testNames = JSON.parse(test.tests);
           
@@ -2245,14 +2240,13 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
             description: `Lab Test: ${testNames.join(", ")}`,
             date: test.requestedDate,
             category: test.category,
-            patient: patientMap.get(test.patientId) || null,
+            patient: test.patient || null,
             patientId: test.patientId,
             serviceIds: serviceIds,
             price: totalPrice,
           };
         }),
-      xray: xrayExams
-        .filter((exam) => exam.paymentStatus === "unpaid")
+      xray: unpaidXrayExams
         .map((exam) => {
           const service = getServiceByCategory("radiology");
           const examTypeLabel = getExamTypeLabel(exam.examType);
@@ -2266,15 +2260,14 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
             date: exam.requestedDate,
             bodyPart: exam.bodyPart,
             examType: exam.examType,
-            patient: patientMap.get(exam.patientId) || null,
+            patient: exam.patient || null,
             patientId: exam.patientId,
             serviceId: service?.id,
             serviceName: service?.name,
             price: service?.price,
           };
         }),
-      ultrasound: ultrasoundExams
-        .filter((exam) => exam.paymentStatus === "unpaid")
+      ultrasound: unpaidUltrasoundExams
         .map((exam) => {
           const service = getServiceByCategory("ultrasound");
           const examTypeLabel = toTitleCase(exam.examType);
@@ -2303,7 +2296,7 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
             date: exam.requestedDate,
             examType: exam.examType,
             specificExam: exam.specificExam,
-            patient: patientMap.get(exam.patientId) || null,
+            patient: exam.patient || null,
             patientId: exam.patientId,
             serviceId: service?.id,
             serviceName: service?.name,
@@ -2311,8 +2304,7 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
           };
         }),
       pharmacy: await Promise.all(
-        pharmacyOrders
-          .filter((order) => order.paymentStatus === "unpaid" && order.status === "prescribed")
+        unpaidPharmacyOrders
           .map(async (order) => {
             const unitPrice = await calculatePharmacyOrderPriceHelper(order, services, drugMap, storage);
             
@@ -2329,7 +2321,7 @@ router.get("/api/unpaid-orders/all", async (_req, res) => {
               date: order.createdAt,
               dosage: order.dosage,
               quantity: order.quantity,
-              patient: patientMap.get(order.patientId) || null,
+              patient: order.patient || null,
               patientId: order.patientId,
               drugId: order.drugId,
               serviceId: service?.id,
