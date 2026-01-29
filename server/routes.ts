@@ -2496,10 +2496,83 @@ router.get("/api/pharmacy-orders/:patientId", async (req, res) => {
   }
 });
 
-router.post("/api/pharmacy-orders", async (req, res) => {
+router.post("/api/pharmacy-orders", async (req: any, res) => {
   try {
     const data = insertPharmacyOrderSchema.parse(req.body);
     const pharmacyOrder = await storage.createPharmacyOrder(data);
+    
+    // Create order line if encounterId is provided
+    if (pharmacyOrder.encounterId) {
+      try {
+        // Fetch necessary data for price calculation
+        // Only fetch what's needed to avoid performance issues
+        const [pharmacyServices, drugs] = await Promise.all([
+          storage.getServicesByCategory("pharmacy"),
+          storage.getDrugs(true)
+        ]);
+        const drugMap = new Map(drugs.map((d: any) => [d.id, d]));
+        
+        // Find pharmacy service for serviceId (use the one linked to the order if available)
+        let serviceId = pharmacyOrder.serviceId;
+        let service = null;
+        
+        if (serviceId) {
+          service = pharmacyServices.find((s: any) => s.id === serviceId);
+        }
+        
+        if (!service) {
+          // Fallback: find any active pharmacy service
+          service = pharmacyServices.find((s: any) => s.isActive);
+        }
+        
+        if (!service) {
+          console.warn(`[PHARMACY-ORDER] No active pharmacy service found for order ${pharmacyOrder.orderId}`);
+          throw new Error("No active pharmacy service found. Please create a pharmacy service in Service Management.");
+        }
+        
+        // Calculate unit price using the helper function
+        const unitPrice = await calculatePharmacyOrderPriceHelper(
+          pharmacyOrder,
+          pharmacyServices,
+          drugMap,
+          storage
+        );
+        
+        // Calculate total price based on quantity
+        const quantity = (pharmacyOrder.quantity && pharmacyOrder.quantity > 0) 
+          ? pharmacyOrder.quantity 
+          : 1;
+        const totalPrice = unitPrice * quantity;
+        
+        // Build description
+        let description = `Pharmacy: ${pharmacyOrder.drugName || "Medication"}`;
+        if (pharmacyOrder.dosage) {
+          description += ` (${pharmacyOrder.dosage})`;
+        }
+        
+        // Create order line (status will use default from schema)
+        const orderLineData = {
+          encounterId: pharmacyOrder.encounterId,
+          serviceId: service.id,
+          relatedType: "pharmacy_order" as const,
+          relatedId: pharmacyOrder.orderId,
+          description,
+          quantity,
+          unitPriceSnapshot: unitPrice,
+          totalPrice,
+          department: "pharmacy" as const,
+          orderedBy: req.user?.username || req.user?.email || "System",
+        };
+        
+        await storage.createOrderLine(orderLineData);
+        console.log(`[PHARMACY-ORDER] Created order line for pharmacy order ${pharmacyOrder.orderId}`);
+      } catch (orderLineError) {
+        // Log error but don't fail the pharmacy order creation
+        console.error("[PHARMACY-ORDER] Failed to create order line:", orderLineError);
+        console.error("[PHARMACY-ORDER] Pharmacy order was created successfully but order line creation failed");
+      }
+    }
+    
     res.status(201).json(pharmacyOrder);
   } catch (error) {
     console.error("Error creating pharmacy order:", error);
