@@ -2496,16 +2496,36 @@ router.post("/api/pharmacy-orders", async (req: any, res) => {
     // Create order line if encounterId is provided
     if (pharmacyOrder.encounterId) {
       try {
-        // Fetch drugs for price calculation
-        const drugs = await storage.getDrugs(true);
+        // Fetch necessary data for price calculation
+        // Only fetch what's needed to avoid performance issues
+        const [pharmacyServices, drugs] = await Promise.all([
+          storage.getServicesByCategory("pharmacy"),
+          storage.getDrugs(true)
+        ]);
         const drugMap = new Map(drugs.map((d: any) => [d.id, d]));
         
+        // Find pharmacy service for serviceId (use the one linked to the order if available)
+        let serviceId = pharmacyOrder.serviceId;
+        let service = null;
+        
+        if (serviceId) {
+          service = pharmacyServices.find((s: any) => s.id === serviceId);
+        }
+        
+        if (!service) {
+          // Fallback: find any active pharmacy service
+          service = pharmacyServices.find((s: any) => s.isActive);
+        }
+        
+        if (!service) {
+          console.warn(`[PHARMACY-ORDER] No active pharmacy service found for order ${pharmacyOrder.orderId}`);
+          throw new Error("No active pharmacy service found. Please create a pharmacy service in Service Management.");
+        }
+        
         // Calculate unit price using the helper function
-        // Pass empty services array to ensure pharmacy pricing comes from drug inventory
-        // (Per PR #481 architecture: pharmacy orders use drug catalog pricing, not services table)
         const unitPrice = await calculatePharmacyOrderPriceHelper(
           pharmacyOrder,
-          [], // Empty services array - pharmacy pricing from drug inventory, not services
+          pharmacyServices,
           drugMap,
           storage
         );
@@ -2522,11 +2542,10 @@ router.post("/api/pharmacy-orders", async (req: any, res) => {
           description += ` (${pharmacyOrder.dosage})`;
         }
         
-        // Create order line WITHOUT requiring a service
-        // Pharmacy orders don't need a service - pricing comes from drug inventory
+        // Create order line (status will use default from schema)
         const orderLineData = {
           encounterId: pharmacyOrder.encounterId,
-          serviceId: null, // Pharmacy orders don't need a service
+          serviceId: service.id,
           relatedType: "pharmacy_order" as const,
           relatedId: pharmacyOrder.orderId,
           description,
