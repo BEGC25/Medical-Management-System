@@ -36,7 +36,7 @@ WHERE related_type = 'pharmacy_order'
 
 -- Summary:
 -- ✓ Fixed pharmacy payment_items where total_price was incorrectly set to unit_price
--- ✓ Ensured total_price = unit_price * quantity for all pharmacy_order records
+-- ✓ Only updates records matching the bug pattern: quantity > 1 AND total_price = unit_price
 --
 -- Verification Query (run manually after migration):
 -- SELECT p.payment_id, p.total_amount, SUM(pi.total_price) AS items_sum, 

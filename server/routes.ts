@@ -1678,6 +1678,8 @@ router.post("/api/payments", async (req: any, res) => {
     let pharmacyOrdersMap: Map<string, any> | null = null;
     let allServicesForPharmacy: any[] | null = null;
     let drugMap: Map<number, any> | null = null;
+    // Cache calculated pharmacy prices: relatedId -> { unitPrice, quantity, totalPrice }
+    const pharmacyPriceCache = new Map<string, { unitPrice: number; quantity: number; totalPrice: number }>();
     
     if (hasPharmacyItems) {
       const [allPharmacyOrders, allServices, allDrugs] = await Promise.all([
@@ -1689,20 +1691,28 @@ router.post("/api/payments", async (req: any, res) => {
       allServicesForPharmacy = allServices;
       drugMap = new Map(allDrugs.map((d: any) => [d.id, d]));
       
-      // Calculate pharmacy item totals using authoritative server-side prices
+      // Calculate and cache pharmacy item totals using authoritative server-side prices
+      // This is done once upfront to ensure consistency between payment total and payment items
       for (const item of items) {
         if (item.relatedType === "pharmacy_order" && item.relatedId) {
           const pharmacyOrder = pharmacyOrdersMap.get(item.relatedId);
-          if (pharmacyOrder) {
-            const unitPrice = await calculatePharmacyOrderPriceHelper(
-              pharmacyOrder,
-              allServicesForPharmacy,
-              drugMap,
-              storage
-            );
-            const orderQuantity = (pharmacyOrder.quantity && pharmacyOrder.quantity > 0) ? pharmacyOrder.quantity : 1;
-            calculatedTotalAmount += unitPrice * orderQuantity;
+          if (!pharmacyOrder) {
+            // Fail early if pharmacy order not found - ensures totalAmount and items stay consistent
+            throw new Error(`Pharmacy order ${item.relatedId} not found`);
           }
+          
+          const unitPrice = await calculatePharmacyOrderPriceHelper(
+            pharmacyOrder,
+            allServicesForPharmacy,
+            drugMap,
+            storage
+          );
+          const orderQuantity = (pharmacyOrder.quantity && pharmacyOrder.quantity > 0) ? pharmacyOrder.quantity : 1;
+          const totalPrice = unitPrice * orderQuantity;
+          
+          // Cache the calculated values for reuse when creating payment items
+          pharmacyPriceCache.set(item.relatedId, { unitPrice, quantity: orderQuantity, totalPrice });
+          calculatedTotalAmount += totalPrice;
         }
       }
     }
@@ -1755,30 +1765,21 @@ router.post("/api/payments", async (req: any, res) => {
             throw new Error("Missing relatedId for pharmacy_order payment item");
           }
           
-          // Look up the pharmacy order from pre-fetched data
-          const pharmacyOrder = pharmacyOrdersMap!.get(item.relatedId);
-          
-          if (!pharmacyOrder) {
-            throw new Error(`Pharmacy order ${item.relatedId} not found`);
+          // Use cached price data computed earlier (ensures consistency with totalAmount)
+          const cachedPrice = pharmacyPriceCache.get(item.relatedId);
+          if (!cachedPrice) {
+            // This should never happen since we validated during totalAmount calculation
+            throw new Error(`Pharmacy order ${item.relatedId} price not cached - internal error`);
           }
           
-          // Calculate the authoritative unit price from the drug catalog (NEVER trust client price)
-          const calculatedUnitPrice = await calculatePharmacyOrderPriceHelper(
-            pharmacyOrder,
-            allServicesForPharmacy!,
-            drugMap!,
-            storage
-          );
+          // Use cached values for consistency with totalAmount calculation
+          unitPrice = cachedPrice.unitPrice;
+          quantity = cachedPrice.quantity;
           
-          // SECURITY: Always use calculated price for pharmacy orders - don't trust client-submitted price
-          unitPrice = calculatedUnitPrice;
-          
-          // Use the actual quantity from the pharmacy order (not the client-submitted quantity)
-          // This ensures totalPrice = unitPrice × pharmacyOrder.quantity
-          quantity = (pharmacyOrder.quantity && pharmacyOrder.quantity > 0) ? pharmacyOrder.quantity : 1;
-          
+          // Get the pharmacy order for serviceId lookup
+          const pharmacyOrder = pharmacyOrdersMap!.get(item.relatedId);
           // serviceId can be null for pharmacy orders - they get pricing from drug catalog
-          serviceId = pharmacyOrder.serviceId || null;
+          serviceId = pharmacyOrder?.serviceId || null;
         } else {
           // For non-pharmacy items, require a valid serviceId
           if (!serviceId || serviceId <= 0) {
