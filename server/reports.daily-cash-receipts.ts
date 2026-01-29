@@ -57,8 +57,10 @@ router.get("/api/reports/daily-cash-receipts", async (req: Request, res: Respons
       departmentFilter = "AND (pi.related_type = 'xray_exam')";
     } else if (department === "ultrasound") {
       departmentFilter = "AND (pi.related_type = 'ultrasound_exam')";
+    } else if (department === "pharmacy") {
+      departmentFilter = "AND (pi.related_type = 'pharmacy_order')";
     } else if (department === "other") {
-      departmentFilter = "AND (pi.related_type NOT IN ('consultation', 'lab_test', 'lab_test_item', 'xray_exam', 'ultrasound_exam') OR pi.related_type IS NULL)";
+      departmentFilter = "AND (pi.related_type NOT IN ('consultation', 'lab_test', 'lab_test_item', 'xray_exam', 'ultrasound_exam', 'pharmacy_order') OR pi.related_type IS NULL)";
     }
 
     // Query to get receipt details
