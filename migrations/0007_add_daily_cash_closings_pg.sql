@@ -48,6 +48,7 @@ SELECT
     WHEN pi.related_type = 'lab_test' OR pi.related_type = 'lab_test_item' THEN 'laboratory'
     WHEN pi.related_type = 'xray_exam' THEN 'xray'
     WHEN pi.related_type = 'ultrasound_exam' THEN 'ultrasound'
+    WHEN pi.related_type = 'pharmacy_order' THEN 'pharmacy'
     ELSE 'other'
   END AS department,
   p.received_by AS cashier_id,
