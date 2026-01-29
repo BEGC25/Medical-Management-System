@@ -1659,13 +1659,56 @@ router.post("/api/payments", async (req: any, res) => {
     const { patientId, items, paymentMethod, receivedBy, notes, totalAmount: providedTotal } =
       req.body;
 
-    const totalAmount =
-      items && items.length > 0
-        ? items.reduce(
-            (sum: number, item: any) => sum + item.unitPrice * item.quantity,
-            0
-          )
-        : providedTotal;
+    // NOTE: totalAmount will be recalculated with server-authoritative prices for pharmacy items
+    // to ensure payments.total_amount == SUM(payment_items.total_price)
+    let calculatedTotalAmount = 0;
+
+    // Pre-calculate total amount for non-pharmacy items using client values (they are trusted)
+    // Pharmacy items will be calculated using server-side prices below
+    if (items && items.length > 0) {
+      for (const item of items) {
+        if (item.relatedType !== "pharmacy_order") {
+          calculatedTotalAmount += (item.unitPrice || 0) * (item.quantity || 1);
+        }
+      }
+    }
+
+    // Pre-fetch pharmacy-related data if there are pharmacy items
+    const hasPharmacyItems = items && items.some((item: any) => item.relatedType === "pharmacy_order");
+    let pharmacyOrdersMap: Map<string, any> | null = null;
+    let allServicesForPharmacy: any[] | null = null;
+    let drugMap: Map<number, any> | null = null;
+    
+    if (hasPharmacyItems) {
+      const [allPharmacyOrders, allServices, allDrugs] = await Promise.all([
+        storage.getPharmacyOrders(),
+        storage.getServices(),
+        storage.getDrugs(true)
+      ]);
+      pharmacyOrdersMap = new Map(allPharmacyOrders.map((o: any) => [o.orderId, o]));
+      allServicesForPharmacy = allServices;
+      drugMap = new Map(allDrugs.map((d: any) => [d.id, d]));
+      
+      // Calculate pharmacy item totals using authoritative server-side prices
+      for (const item of items) {
+        if (item.relatedType === "pharmacy_order" && item.relatedId) {
+          const pharmacyOrder = pharmacyOrdersMap.get(item.relatedId);
+          if (pharmacyOrder) {
+            const unitPrice = await calculatePharmacyOrderPriceHelper(
+              pharmacyOrder,
+              allServicesForPharmacy,
+              drugMap,
+              storage
+            );
+            const orderQuantity = (pharmacyOrder.quantity && pharmacyOrder.quantity > 0) ? pharmacyOrder.quantity : 1;
+            calculatedTotalAmount += unitPrice * orderQuantity;
+          }
+        }
+      }
+    }
+
+    // Use calculated total if we have items, otherwise use provided total
+    const totalAmount = (items && items.length > 0) ? calculatedTotalAmount : providedTotal;
 
     const payment = await storage.createPayment({
       patientId,
@@ -1697,25 +1740,8 @@ router.post("/api/payments", async (req: any, res) => {
       // Track which consultation order lines have been used
       const usedOrderLineIds = new Set<number>();
 
-      // Pre-fetch pharmacy-related data only if there are pharmacy items (performance optimization)
-      const hasPharmacyItems = items.some((item: any) => item.relatedType === "pharmacy_order");
-      let pharmacyOrdersMap: Map<string, any> | null = null;
-      let allServicesForPharmacy: any[] | null = null;
-      let drugMap: Map<number, any> | null = null;
-      
-      if (hasPharmacyItems) {
-        const [allPharmacyOrders, allServices, allDrugs] = await Promise.all([
-          storage.getPharmacyOrders(),
-          storage.getServices(),
-          storage.getDrugs(true)
-        ]);
-        pharmacyOrdersMap = new Map(allPharmacyOrders.map((o: any) => [o.orderId, o]));
-        allServicesForPharmacy = allServices;
-        drugMap = new Map(allDrugs.map((d: any) => [d.id, d]));
-      }
-
       for (const item of items) {
-        const quantity = item.quantity || 1;
+        let quantity = item.quantity || 1;
         
         // Determine orderLineId - either from item directly, or find matching unpaid consultation
         let orderLineId = item.orderLineId;
@@ -1746,6 +1772,10 @@ router.post("/api/payments", async (req: any, res) => {
           
           // SECURITY: Always use calculated price for pharmacy orders - don't trust client-submitted price
           unitPrice = calculatedUnitPrice;
+          
+          // Use the actual quantity from the pharmacy order (not the client-submitted quantity)
+          // This ensures totalPrice = unitPrice × pharmacyOrder.quantity
+          quantity = (pharmacyOrder.quantity && pharmacyOrder.quantity > 0) ? pharmacyOrder.quantity : 1;
           
           // serviceId can be null for pharmacy orders - they get pricing from drug catalog
           serviceId = pharmacyOrder.serviceId || null;
@@ -1880,6 +1910,18 @@ router.post("/api/payments", async (req: any, res) => {
             });
           }
         }
+      }
+      
+      // INTEGRITY CHECK: Verify payments.total_amount == SUM(payment_items.total_price)
+      // This ensures data consistency between the payment header and line items
+      const createdPaymentItems = await storage.getPaymentItems(payment.paymentId);
+      const itemsSum = createdPaymentItems.reduce((sum: number, pi: any) => sum + (pi.totalPrice || 0), 0);
+      if (Math.abs(totalAmount - itemsSum) > 0.01) {
+        console.warn(
+          `[PAYMENT INTEGRITY WARNING] Payment ${payment.paymentId}: ` +
+          `total_amount (${totalAmount}) != SUM(payment_items.total_price) (${itemsSum}). ` +
+          `Difference: ${totalAmount - itemsSum}`
+        );
       }
     }
 
