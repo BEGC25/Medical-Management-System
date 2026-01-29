@@ -118,6 +118,15 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
+  // Run startup migrations/backfills
+  try {
+    const { backfillPharmacyOrderLines } = await import('./migrations/backfill-pharmacy-order-lines');
+    await backfillPharmacyOrderLines();
+  } catch (error) {
+    console.error('[STARTUP] Failed to run pharmacy order lines backfill:', error);
+    // Don't crash the server, just log the error
+  }
+
   // Health checks
   app.get("/health", (_req, res) => res.status(200).send("ok"));
 

@@ -2504,36 +2504,15 @@ router.post("/api/pharmacy-orders", async (req: any, res) => {
     // Create order line if encounterId is provided
     if (pharmacyOrder.encounterId) {
       try {
-        // Fetch necessary data for price calculation
-        // Only fetch what's needed to avoid performance issues
-        const [pharmacyServices, drugs] = await Promise.all([
-          storage.getServicesByCategory("pharmacy"),
-          storage.getDrugs(true)
-        ]);
+        // Fetch drugs for price calculation
+        const drugs = await storage.getDrugs(true);
         const drugMap = new Map(drugs.map((d: any) => [d.id, d]));
         
-        // Find pharmacy service for serviceId (use the one linked to the order if available)
-        let serviceId = pharmacyOrder.serviceId;
-        let service = null;
-        
-        if (serviceId) {
-          service = pharmacyServices.find((s: any) => s.id === serviceId);
-        }
-        
-        if (!service) {
-          // Fallback: find any active pharmacy service
-          service = pharmacyServices.find((s: any) => s.isActive);
-        }
-        
-        if (!service) {
-          console.warn(`[PHARMACY-ORDER] No active pharmacy service found for order ${pharmacyOrder.orderId}`);
-          throw new Error("No active pharmacy service found. Please create a pharmacy service in Service Management.");
-        }
-        
         // Calculate unit price using the helper function
+        // Empty services array - pharmacy doesn't use services
         const unitPrice = await calculatePharmacyOrderPriceHelper(
           pharmacyOrder,
-          pharmacyServices,
+          [], // Empty services array - pharmacy doesn't use services
           drugMap,
           storage
         );
@@ -2550,10 +2529,11 @@ router.post("/api/pharmacy-orders", async (req: any, res) => {
           description += ` (${pharmacyOrder.dosage})`;
         }
         
-        // Create order line (status will use default from schema)
+        // Create order line WITHOUT requiring a service
+        // Pharmacy orders don't need a service - pricing comes from drug inventory
         const orderLineData = {
           encounterId: pharmacyOrder.encounterId,
-          serviceId: service.id,
+          serviceId: null, // Pharmacy orders don't need a service
           relatedType: "pharmacy_order" as const,
           relatedId: pharmacyOrder.orderId,
           description,
